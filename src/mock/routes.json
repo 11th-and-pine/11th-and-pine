@@ -1,0 +1,40 @@
+{
+  "routes": [
+    {
+      "id": "main",
+      "name": "Main Route",
+      "description": "Walk from Westlake Station to Cal Anderson Park and discover the story of CHOP.",
+      "duration": "45 min",
+      "distance": "1.2 miles",
+      "stops": [
+        {
+          "id": 1,
+          "name": "Westlake Station",
+          "description": "The starting point of your journey. CHOP began here in June 2020.",
+          "position": [47.6131, -122.3371],
+          "order": 1,
+          "audioUrl": "/audio/stop-1.mp3",
+          "imageUrl": "/images/stop-1.jpg"
+        },
+        {
+          "id": 2,
+          "name": "11th & Pine",
+          "description": "The heart of CHOP, where community gathered and voices were heard.",
+          "position": [47.6152, -122.3189],
+          "order": 2,
+          "audioUrl": "/audio/stop-2.mp3",
+          "imageUrl": "/images/stop-2.jpg"
+        },
+        {
+          "id": 3,
+          "name": "Cal Anderson Park",
+          "description": "The final destination and center of the CHOP community.",
+          "position": [47.6165, -122.3197],
+          "order": 3,
+          "audioUrl": "/audio/stop-3.mp3",
+          "imageUrl": "/images/stop-3.jpg"
+        }
+      ]
+    }
+  ]
+}

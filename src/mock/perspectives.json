@@ -1,0 +1,37 @@
+{
+  "perspectives": [
+    {
+      "id": "1",
+      "name": "Alex",
+      "role": "Community Organizer",
+      "shortBio": "Alex was one of the first organizers on the ground during CHOP.",
+      "fullBio": "Alex has been a community organizer in Capitol Hill for over a decade. During CHOP, Alex helped coordinate daily community meetings and resource distribution.",
+      "routeId": "main",
+      "audioUrl": "/audio/perspective-1.mp3",
+      "imageUrl": "/images/perspective-1.jpg",
+      "stops": [1, 2, 3]
+    },
+    {
+      "id": "2",
+      "name": "Jordan",
+      "role": "Local Resident",
+      "shortBio": "Jordan lived two blocks from Cal Anderson Park during CHOP.",
+      "fullBio": "Jordan has called Capitol Hill home for five years. Living just blocks away, Jordan witnessed the transformation of the neighborhood firsthand and participated in community events.",
+      "routeId": "main",
+      "audioUrl": "/audio/perspective-2.mp3",
+      "imageUrl": "/images/perspective-2.jpg",
+      "stops": [2, 3]
+    },
+    {
+      "id": "3",
+      "name": "Sam",
+      "role": "Street Medic",
+      "shortBio": "Sam volunteered as a street medic throughout the duration of CHOP.",
+      "fullBio": "Sam trained as an EMT and volunteered their skills during CHOP, helping set up and run the community medical station near Cal Anderson Park.",
+      "routeId": "main",
+      "audioUrl": "/audio/perspective-3.mp3",
+      "imageUrl": "/images/perspective-3.jpg",
+      "stops": [1, 2, 3]
+    }
+  ]
+}
