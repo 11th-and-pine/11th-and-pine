@@ -1,4 +1,4 @@
-# 11th-and-pine
+# 11TH-and-Pine
 Capstone project documentation for 11th & Pine: a location-based audio app about CHOP.
 
 ## Project Overview
