@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import pic1 from '../../assets/images/onboarding1-1.webp'
 import pic2 from '../../assets/images/onboarding1-2.jpg'
 import pic3 from '../../assets/images/onboarding1-3.webp'
+import pic4 from '../../assets/images/onboarding1-4.jpeg'
 
 function Onboarding1() {
   const navigate = useNavigate()
   const [visible, setVisible] = useState(false)
 
   const [currentPic, setCurrentPic] = useState(0)
-  const pics = [pic1, pic2, pic3]
+  const pics = [pic1, pic2, pic3, pic4]
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
