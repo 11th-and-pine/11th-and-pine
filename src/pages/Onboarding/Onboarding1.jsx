@@ -9,56 +9,75 @@ function Onboarding1() {
   const navigate = useNavigate()
   const [visible, setVisible] = useState(false)
 
+  const [currentPic, setCurrentPic] = useState(0)
+  const pics = [pic1, pic2, pic3]
+
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
   }, [])
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-red-500 via-yellow-500 via-green-500 via-blue-500 via-indigo-500 to-purple-500 flex flex-col font-sans">
+    <div className="min-h-dvh bg-[#f0e8d0] flex flex-col font-sans">
 
-      <div className="flex-none h-[55vh] relative overflow-hidden bg-indigo-500">
-
-        {/* 图片放这里作为背景， 图片还要改，要加地图吗？ */}
-        <img src={pic1} className="absolute inset-0 w-full h-full object-cover" />
-
-        {/* 渐变遮罩 */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-b from-transparent to-zinc-300" />
-        {/* Progress dots */}
-        
-        <div className="flex gap-1.5 mb-6">
-          {[0, 1, 2].map(i => (
-            <div key={i} className={`h-1 w-6 rounded-full ${i === 0 ? 'bg-yellow-400' : 'bg-gray-400'}`} />
+      <div className="flex-none h-[50vh] relative overflow-hidden">
+        <div
+          className='flex h-full transition-transform duration-300 ease-out'
+          style={{ transform: `translateX(-${currentPic * 100}%)` }}
+        >
+          {pics.map((pic, i) => (
+            <img key={i} src={pic} className="w-full h-full object-cover shrink-0" />
           ))}
         </div>
-      
+
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-white" />
+        {/* 小圆点 */}
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2">
+          {pics.map((_, i) => (
+            <div
+              key={i}
+              className={`rounded-full transition-all duration-300 ${i === currentPic ? 'w-4 h-2 bg-white' : 'w-2 h-2 bg-white/50'
+                }`}
+            />
+          ))}
+        </div>
+        {/* 移动端滑动切换图片 */}
+        <div
+          className="absolute inset-0"
+          onTouchStart={(e) => {
+            const startX = e.touches[0].clientX
+            e.currentTarget.ontouchend = (e2) => {
+              const diff = startX - e2.changedTouches[0].clientX
+              if (diff > 50) setCurrentPic(prev => Math.min(prev + 1, pics.length - 1))
+              if (diff < -50) setCurrentPic(prev => Math.max(prev - 1, 0))
+            }
+          }}
+        />
       </div>
 
-      {/* Content */}
-      <div className={`flex-1 px-7 py-8 flex flex-col transition-all duration-500 ease-out
+      <div className={`flex-1 px-7 pt-6 pb-10 flex flex-col transition-all duration-500 ease-out
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
 
-        <p className="text-[11px] font-medium tracking-widest text-yellow-400 uppercase mb-2">
-          ✨ This is not just a walk — it’s a living memory map.
+        <p className="text-[11px] font-semibold tracking-widest text-[#e8a020] uppercase mb-3">
+          A living memory map
         </p>
-        <h1 className="font-serif text-[28px] text-white leading-tight mb-3">
+        <h1 className="font-serif text-[30px] text-[#1a1208] leading-tight mb-4">
           Welcome to 11th & Pine
         </h1>
-        <p className="text-[15px] text-gray-200 leading-relaxed font-light flex-1 mb-8">
+        <p className="text-[16px] text-[#64615a] leading-relaxed flex-1 mb-8">
           Capitol Hill Organized Protest (CHOP) was a community-led protest zone in Seattle during the summer of 2020.
           <br />
-          It became a space for expression, activism, and collective memory.
-          <br />
+          This app walks you through those streets. At each location, you'll hear the stories of the people who were there.
         </p>
 
         <button
           onClick={() => navigate('/tutorial/1')}
-          className="w-full bg-white text-black rounded-2xl py-4 text-base font-medium active:scale-95 transition-transform"
+          className="w-full bg-[#c0392b] text-white rounded-lg py-4 text-base font-semibold shadow-sm active:scale-95 transition-transform"
         >
-          Tutorial
+          Continue
         </button>
         <p
           onClick={() => navigate('/map')}
-          className="text-center text-gray-300 text-sm mt-3 cursor-pointer"
+          className="text-center text-[#827b68] text-sm mt-3 cursor-pointer"
         >
           Skip intro
         </p>
