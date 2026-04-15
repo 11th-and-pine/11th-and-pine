@@ -28,7 +28,14 @@ function PerspectivesList() {
           {perspectives.map((p, index) => (
             <div
               key={p.id}
+              role="button"
+              tabIndex={0}
               onClick={() => navigate(`/perspectives/${p.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  navigate(`/perspectives/${p.id}`)
+                }
+              }}
               style={{
                 ...styles.card,
                 opacity: loaded ? 1 : 0,
@@ -56,6 +63,7 @@ function PerspectivesList() {
                 <h2 style={styles.cardTitle}>{p.name}</h2>
                 <p style={styles.role}>{p.role}</p>
                 <p style={styles.bio}>{p.shortBio}</p>
+                <p style={styles.helperText}>Tap to view story and map</p>
               </div>
 
               <div style={styles.arrow}>→</div>
@@ -128,6 +136,7 @@ const styles = {
     padding: '22px',
     cursor: 'pointer',
     boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
+    outline: 'none',
   },
   cardLeft: {
     flexShrink: 0,
@@ -168,6 +177,11 @@ const styles = {
     lineHeight: 1.5,
     color: '#66635f',
     margin: 0,
+  },
+  helperText: {
+    fontSize: '15px',
+    color: '#9a9892',
+    margin: '10px 0 0 0',
   },
   arrow: {
     fontSize: '28px',
