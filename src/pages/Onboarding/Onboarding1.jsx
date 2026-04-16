@@ -4,8 +4,8 @@ function Onboarding1() {
   const navigate = useNavigate()
   return (
     <div>
-      <h1>Welcome to 11th & Pine</h1>
-      <p>Discover the story of CHOP through an immersive walking tour.</p>
+      <h1>Immersive Experience</h1>
+      <p>Wear headphones for the best experience. Stay aware of your surroundings.</p>
       <button onClick={() => navigate('/onboarding/2')}>Next</button>
     </div>
   )

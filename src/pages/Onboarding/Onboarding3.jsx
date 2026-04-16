@@ -4,9 +4,9 @@ function Onboarding3() {
   const navigate = useNavigate()
   return (
     <div>
-      <h1>Choose your route</h1>
-      <p>Follow the main route or explore branching paths along the way.</p>
-      <button onClick={() => navigate('/onboarding/4')}>Next</button>
+      <h1>How it works</h1>
+      <p>Your phone will vibrate when you approach an audio trigger point. Tap to explore highlights along the route.</p>
+      <button onClick={() => navigate('/map/overview')}>Start Walking</button>
     </div>
   )
 }
