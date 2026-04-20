@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
-import heroImg from '../../assets/images/onboarding1-1.webp'
+import heroImg from '../../assets/images/onboarding1-3.webp'
 
-function Onboarding1() {
+function Onboarding3() {
   const navigate = useNavigate()
   const [visible, setVisible] = useState(false)
 
@@ -14,6 +14,9 @@ function Onboarding1() {
 
   const handleSwipe = (diff) => {
     if (diff > 70) {
+      navigate('/map')
+    }
+    if (diff < -70) {
       navigate('/onboarding/2')
     }
   }
@@ -33,7 +36,7 @@ function Onboarding1() {
         <svg className="absolute size-0" aria-hidden="true" focusable="false">
           <defs>
             <clipPath id="onboarding-hero-curve" clipPathUnits="objectBoundingBox">
-              <path d="M0,0 H1 V1 C0.84,1 0.35,1 0,0.85 Z" />
+              <path d="M0,0 H1 V0.75 C0.84,1 0.25,0.9 0,1 Z" />
             </clipPath>
           </defs>
         </svg>
@@ -59,25 +62,23 @@ function Onboarding1() {
         className={`flex-1 px-7 pt-7 pb-8 flex flex-col transition-all duration-500 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
           }`}
       >
-        <h1 className="text-[30px] font-bold text-black leading-[1.05] mb-5">
-          Immersive
-          <br />
-          Experience
+        <h1 className="text-[30px] font-bold text-black leading-tight mb-5 text-right">
+          Stories
         </h1>
 
-        <p className="text-[16px] text-[#4b5563] leading-7 mb-8">
-          Wear headphones for the best experience. Stay aware of your surroundings.
+        <p className="text-[16px] text-[#4b5563] leading-7 mb-8 text-right">
+          Listen to voices and perspectives that help you revisit what unfolded here.
         </p>
 
         <div className="mt-auto">
-          <div className="flex justify-start gap-2 mb-10">
+          <div className="flex justify-center gap-2 mb-10">
+            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
+            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
             <div className="w-12 h-1.5 rounded-full bg-sky-400" />
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
           </div>
 
           <button
-            onClick={() => navigate('/onboarding/2')}
+            onClick={() => navigate('/map')}
             className="w-full bg-[#0a5cff] text-white rounded-full py-4 text-xl font-semibold shadow-sm active:scale-95 transition-transform"
           >
             Continue
@@ -96,4 +97,4 @@ function Onboarding1() {
   )
 }
 
-export default Onboarding1
+export default Onboarding3
