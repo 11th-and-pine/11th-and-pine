@@ -9,7 +9,6 @@ const START_POS = [47.61208726167953, -122.33701558200671]
 
 const toLngLat = ([lat, lng]) => [lng, lat]
 
-// Approximate circle polygon for proximity ring
 function circlePolygon([lat, lng], radiusM, steps = 64) {
   const coords = []
   for (let i = 0; i < steps; i++) {
@@ -31,19 +30,6 @@ function distanceKm([lat1, lon1], [lat2, lon2]) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-function compassDir([lat1, lon1], [lat2, lon2]) {
-  const dLon = (lon2 - lon1) * Math.PI / 180
-  const φ1 = lat1 * Math.PI / 180
-  const φ2 = lat2 * Math.PI / 180
-  const y = Math.sin(dLon) * Math.cos(φ2)
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(dLon)
-  const bearing = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360
-  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-  return dirs[Math.round(bearing / 45) % 8]
-}
-
-const DIR_LABEL = { N: 'North', NE: 'Northeast', E: 'East', SE: 'Southeast', S: 'South', SW: 'Southwest', W: 'West', NW: 'Northwest' }
-
 export default function NavigateToStart() {
   const navigate = useNavigate()
   const mapRef = useRef()
@@ -62,7 +48,6 @@ export default function NavigateToStart() {
     )
   }, [])
 
-  // Fly to midpoint when user position updates
   useEffect(() => {
     if (!userPos) return
     const mid = [
@@ -73,9 +58,6 @@ export default function NavigateToStart() {
   }, [userPos])
 
   const dist = userPos ? distanceKm(userPos, START_POS) : null
-  const distMiles = dist !== null ? dist * 0.621371 : null
-  const walkMins = dist !== null ? Math.max(1, Math.round(dist / 0.083)) : null
-  const dir = userPos ? compassDir(userPos, START_POS) : null
   const atStart = dist !== null && dist < 0.08
 
   const mid = userPos
@@ -118,8 +100,15 @@ export default function NavigateToStart() {
         {/* User dot */}
         {userPos && <Marker longitude={userPos[1]} latitude={userPos[0]} anchor="center">
           <div style={{ position: 'relative', width: 24, height: 24 }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(59,130,246,0.35)', borderRadius: '50%', animation: 'userPing 2s ease-in-out infinite' }} />
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 13, height: 13, background: '#3b82f6', border: '3px solid white', borderRadius: '50%', boxShadow: '0 2px 10px rgba(59,130,246,0.7)' }} />
+            <div style={{ 
+              position: 'absolute', inset: 0, background: 'rgba(59,130,246,0.35)', 
+              borderRadius: '50%', animation: 'userPing 2s ease-in-out infinite' 
+            }} />
+            <div style={{ 
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', 
+              width: 13, height: 13, background: '#3b82f6', border: '3px solid white', borderRadius: '50%', 
+              boxShadow: '0 2px 10px rgba(59,130,246,0.7)' 
+            }} />
           </div>
         </Marker>}
 
@@ -132,19 +121,23 @@ export default function NavigateToStart() {
       {/* Top bar */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.82) 0%, transparent 100%)',
-        padding: '18px 16px 48px',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        padding: '18px 16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between'
       }}>
         <button onClick={() => navigate(-1)} style={{
-          background: 'rgba(255,255,255,0.12)', border: 'none', color: 'white',
-          padding: '8px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer',
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.18)',
+          color: 'white',
+          padding: '8px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer'
         }}>← Back</button>
 
         <div style={{
-          background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 20, padding: '6px 12px',
-          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.18)',
+          borderRadius: 20, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6
         }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: userPos ? '#22c55e' : '#f59e0b' }} />
           <span style={{ color: 'white', fontSize: 12 }}>{userPos ? 'Live GPS' : 'Locating…'}</span>
@@ -156,7 +149,7 @@ export default function NavigateToStart() {
         position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1000,
         background: 'white', borderRadius: '24px 24px 0 0',
         boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
-        padding: '14px 20px 44px',
+        padding: '14px 20px 44px'
       }}>
         <div style={{ width: 40, height: 4, background: '#d1d5db', borderRadius: 2, margin: '0 auto 20px' }} />
 
@@ -172,30 +165,17 @@ export default function NavigateToStart() {
           </div>
         )}
 
-        {userPos && (atStart ? (
+        {atStart && (
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>✅</div>
             <div style={{ color: '#111827', fontWeight: 700, fontSize: 18 }}>You're at the starting point!</div>
             <div style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>Westlake Center — ready to begin</div>
           </div>
-        ) : (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: '#eff6ff', border: '1px solid #bfdbfe',
-            borderRadius: 16, padding: '14px', marginBottom: 18,
-          }}>
-            <div style={{ width: 46, height: 46, flexShrink: 0, background: '#dbeafe', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🧭</div>
-            <div>
-              <div style={{ color: '#111827', fontWeight: 600, fontSize: 15 }}>Head {DIR_LABEL[dir]} to reach start</div>
-              <div style={{ color: '#6b7280', fontSize: 13, marginTop: 2 }}>Westlake Center · {distMiles.toFixed(2)} mi · ~{walkMins} min walk</div>
-            </div>
-          </div>
-        ))}
+        )}
 
         <button onClick={() => navigate('/map/walking')} style={{
-          width: '100%', background: atStart ? '#22c55e' : '#84C4FF',
-          color: '#0a0a0a', border: 'none', padding: '15px', borderRadius: 16,
-          fontSize: 16, fontWeight: 600, cursor: 'pointer',
+          width: '100%', background: '#84C4FF', color: '#0a0a0a', 
+          padding: '15px', borderRadius: 16, fontSize: 16, fontWeight: 600, cursor: 'pointer'
         }}>
           {atStart ? 'Begin Walk →' : 'Begin Walk Anyway →'}
         </button>

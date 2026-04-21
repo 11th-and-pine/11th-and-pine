@@ -8,6 +8,7 @@ import GuidedWalk from './pages/Map/GuidedWalk'
 import ExploreRoutes from './pages/Map/ExploreRoutes'
 import PerspectivesList from './pages/Perspectives/PerspectivesList'
 import PerspectiveDetail from './pages/Perspectives/PerspectiveDetail'
+
 function App() {
   return (
     <div className="phone-shell">

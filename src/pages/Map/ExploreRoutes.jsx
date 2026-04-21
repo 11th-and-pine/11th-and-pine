@@ -121,30 +121,12 @@ export default function ExploreRoutes() {
     })
   }
 
-  // Start button styles
-  let btnBg
-  if (activeRoute) {
-    btnBg = activeRoute.color
-  } else {
-    btnBg = '#e5e7eb'
-  }
-
-  let btnColor
-  if (activeRoute) {
-    btnColor = 'white'
-  } else {
-    btnColor = '#9ca3af'
-  }
-
-  let btnLabel
-  if (activeRoute) {
-    btnLabel = 'Start ' + activeRoute.title + ' →'
-  } else {
-    btnLabel = 'Select a route to begin'
-  }
+  const btnBg = activeRoute ? activeRoute.color : '#e5e7eb'
+  const btnColor = activeRoute ? 'white' : '#9ca3af'
+  const btnLabel = activeRoute ? `Start ${activeRoute.title} →` : 'Select a route to begin'
 
   return (
-    <div style={{ height: '100%', width: '100%', position: 'relative', overflow: 'hidden' }}>
+    <div style={{height: '100%', width: '100%', position: 'relative', overflow: 'hidden'}}>
       <Map
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
@@ -158,26 +140,9 @@ export default function ExploreRoutes() {
       >
         {ROUTES.map(route => {
           const active = selectedId === route.id
-          let lineWidth
-          if (active) {
-            lineWidth = 6
-          } else {
-            lineWidth = 4
-          }
-
-          let lineOpacity
-          if (active) {
-            lineOpacity = 1
-          } else {
-            lineOpacity = 0.35
-          }
-
-          let glowOpacity
-          if (active) {
-            glowOpacity = 0.15
-          } else {
-            glowOpacity = 0
-          }
+          const lineWidth = active ? 6 : 4
+          const lineOpacity = active ? 1 : 0.35
+          const glowOpacity = active ? 0.15 : 0
 
           return (
             <Source key={route.id} id={`route-${route.id}`} type="geojson" data={{
@@ -190,8 +155,13 @@ export default function ExploreRoutes() {
                 paint={{ 'line-color': route.color, 'line-width': 18, 'line-opacity': glowOpacity }}
               />
               <Layer id={`route-line-${route.id}`} type="line"
-                layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-                paint={{ 'line-color': route.color, 'line-width': lineWidth, 'line-opacity': lineOpacity }}
+                layout={{ 'line-cap': active ? 'round' : 'butt', 'line-join': 'round' }}
+                paint={{
+                  'line-color': route.color,
+                  'line-width': lineWidth,
+                  'line-opacity': lineOpacity,
+                  ...(!active && { 'line-dasharray': [2, 2] }),
+                }}
               />
             </Source>
           )
@@ -201,7 +171,9 @@ export default function ExploreRoutes() {
         {ROUTES.map(route => (
           <Marker key={`start-${route.id}`} longitude={route.path[0][1]} latitude={route.path[0][0]} anchor="center"
             onClick={() => toggleRoute(route.id)}>
-            <div style={{ width: 11, height: 11, background: route.color, border: '2.5px solid white', borderRadius: '50%', boxShadow: '0 1px 6px rgba(0,0,0,0.5)', cursor: 'pointer' }} />
+            <div style={{ width: 11, height: 11, background: route.color, border: '2.5px solid white', borderRadius: '50%', 
+              boxShadow: '0 1px 6px rgba(0,0,0,0.5)', cursor: 'pointer' 
+            }} />
           </Marker>
         ))}
 
@@ -210,7 +182,9 @@ export default function ExploreRoutes() {
           const end = route.path[route.path.length - 1]
           return (
             <Marker key={`end-${route.id}`} longitude={end[1]} latitude={end[0]} anchor="center">
-              <div style={{ width: 10, height: 10, background: route.color, border: '2.5px solid white', borderRadius: '50%', boxShadow: `0 2px 8px ${route.color}88` }} />
+              <div style={{ width: 10, height: 10, background: route.color, border: '2.5px solid white', 
+                borderRadius: '50%', boxShadow: `0 2px 8px ${route.color}88` 
+              }} />
             </Marker>
           )
         })}
@@ -219,13 +193,18 @@ export default function ExploreRoutes() {
       {/* Back button */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.78) 0%, transparent 100%)',
-        padding: '18px 16px 40px',
+        padding: '18px 16px 16px',
       }}>
         <button onClick={() => navigate(-1)} style={{
-          background: 'rgba(255,255,255,0.12)', border: 'none', color: 'white',
-          padding: '7px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer',
-        }}>← Back</button>
+            width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+            background: 'white', boxShadow: '0 0 0 6px rgba(0,0,0,0.06)',
+            border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+        </button>
       </div>
 
       {/* Bottom drawer */}
@@ -246,27 +225,9 @@ export default function ExploreRoutes() {
         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 20px 4px', scrollbarWidth: 'none' }}>
           {ROUTES.map(route => {
             const active = selectedId === route.id
-
-            let cardBg
-            if (active) {
-              cardBg = route.color + '12'
-            } else {
-              cardBg = '#f9fafb'
-            }
-
-            let cardBorder
-            if (active) {
-              cardBorder = route.color + '80'
-            } else {
-              cardBorder = '#e5e7eb'
-            }
-
-            let roleColor
-            if (active) {
-              roleColor = route.color
-            } else {
-              roleColor = '#6b7280'
-            }
+            const cardBg = active ? route.color + '12' : '#f9fafb'
+            const cardBorder = active ? route.color + '80' : '#e5e7eb'
+            const roleColor = active ? route.color : '#6b7280'
 
             return (
               <button key={route.id} onClick={() => toggleRoute(route.id)} style={{
