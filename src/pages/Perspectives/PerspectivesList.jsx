@@ -73,7 +73,7 @@ function PerspectivesList() {
       </div>
 
       <div style={styles.bottomBar}>
-        <button style={styles.primaryButton} onClick={() => navigate('/complete')}>
+        <button style={styles.primaryButton} onClick={() => navigate(-1)}>
           Back
         </button>
       </div>
@@ -83,7 +83,7 @@ function PerspectivesList() {
 
 const styles = {
   page: {
-    minHeight: '100vh',
+    minHeight: '100%',
     backgroundColor: '#f3f3f1',
     display: 'flex',
     flexDirection: 'column',

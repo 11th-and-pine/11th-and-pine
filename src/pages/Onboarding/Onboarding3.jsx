@@ -78,14 +78,14 @@ function Onboarding3() {
           </div>
 
           <button
-            onClick={() => navigate('/map')}
+            onClick={() => navigate('/map/overview')}
             className="w-full bg-[#0a5cff] text-white rounded-full py-4 text-xl font-semibold shadow-sm active:scale-95 transition-transform"
           >
             Continue
           </button>
 
           <p
-            onClick={() => navigate('/map')}
+            onClick={() => navigate('/map/overview')}
             className="text-center text-[#b9b9b9] text-xs mt-4 underline cursor-pointer"
           >
             Privacy Policy
