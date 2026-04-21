@@ -61,10 +61,15 @@ const EXPLORE_ROUTES = [
   ]},
 ]
 
-const toLngLat = ([lat, lng]) => [lng, lat]
+const POIS = [
+  {id: 1, position: [47.6120, -122.3358], icon: '📍', name: 'Pin 1', title: 'Title 1', desc: 'Description 1'},
+  {id: 2, position: [47.6136, -122.3318], icon: '📍', name: 'Pin 2', title: 'Title 2', desc: 'Description 2'},
+  {id: 3, position: [47.6153, -122.3240], icon: '📍', name: 'Pin 3', title: 'Title 3', desc: 'Description 3'}
+]
 
-// tags on the sheet
 const TAGS = ['Uprising', 'Movement', 'Resistance']
+
+const toLngLat = ([lat, lng]) => [lng, lat]
 
 // Snap positions as fraction of container height (sheet top)
 const SheetOrigin = 0.60
@@ -76,6 +81,7 @@ export default function RouteOverview() {
   const containerRef = useRef()
 
   const [sheetFraction, setSheetFraction] = useState(SheetOrigin)
+  const [openPOI, setOpenPOI] = useState(null)
   const sheetFractionRef = useRef(SheetOrigin)
   const drag = useRef({ active: false, startY: 0, startFraction: SheetOrigin})
 
@@ -150,7 +156,7 @@ export default function RouteOverview() {
         >
           <Layer id="main-route-layer" type="line"
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            paint={{ 'line-color': '#5272FF', 'line-width': 5, 'line-opacity': 0.9 }}
+            paint={{ 'line-color': '#84C4FF', 'line-width': 5, 'line-opacity': 0.9 }}
           />
         </Source>
 
@@ -158,19 +164,115 @@ export default function RouteOverview() {
           const end = route.path[route.path.length - 1]
           return (
             <Marker key={`end-${i}`} longitude={end[1]} latitude={end[0]} anchor="center">
-              <div style={{ width: 10, height: 10, background: route.color, border: '2.5px solid white', borderRadius: '50%', boxShadow: `0 2px 8px ${route.color}88` }} />
+              <div style={{ width: 10, height: 10, background: route.color, border: '2.5px solid white', 
+                borderRadius: '50%', boxShadow: `0 2px 8px ${route.color}88` 
+              }} />
             </Marker>
           )
         })}
 
+        {/* POI markers */}
+        {POIS.map(poi => (
+          <Marker key={poi.id} longitude={poi.position[1]} latitude={poi.position[0]} anchor="center">
+            <div onClick={() => setOpenPOI(poi)} style={{ fontSize: 28, cursor: 'pointer', lineHeight: 1 }}>
+              {poi.icon}
+            </div>
+          </Marker>
+        ))}
+
+        {/* Start marker — green */}
         <Marker longitude={MAIN_ROUTE[0][1]} latitude={MAIN_ROUTE[0][0]} anchor="center">
-          <div style={{ width: 14, height: 14, background: '#5272FF', border: '3px solid white', borderRadius: '50%', boxShadow: '0 2px 8px rgba(82,114,255,0.6)' }} />
+          <div style={{ width: 14, height: 14, background: '#22c55e', border: '3px solid white', borderRadius: '50%',
+            boxShadow: '0 2px 8px rgba(34,197,94,0.6)' 
+          }} />
         </Marker>
 
+        {/* End marker — red */}
         <Marker longitude={MAIN_ROUTE[MAIN_ROUTE.length - 1][1]} latitude={MAIN_ROUTE[MAIN_ROUTE.length - 1][0]} anchor="center">
-          <div style={{ width: 14, height: 14, background: '#5272FF', border: '3px solid white', borderRadius: '50%', boxShadow: '0 2px 8px rgba(82,114,255,0.6)' }} />
+          <div style={{ width: 14, height: 14, background: '#ef4444', border: '3px solid white', borderRadius: '50%', 
+            boxShadow: '0 2px 8px rgba(239,68,68,0.6)' 
+          }} />
         </Marker>
       </Map>
+
+      {/* POI detail card */}
+      {openPOI && (
+        <div
+          onClick={() => setOpenPOI(null)}
+          style={{
+            position: 'absolute', inset: 0, zIndex: 2500,
+            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: 346, height: 538,
+              borderRadius: 40, overflow: 'hidden',
+              position: 'relative', flexShrink: 0,
+              background: 'linear-gradient(160deg, #3d3d3d 0%, #1a1a1a 100%)',
+            }}
+          >
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.03)' }} />
+            <div style={{
+              position: 'absolute', top: 80, left: 0, right: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 80, opacity: 0.35,
+            }}>{openPOI.icon}</div>
+
+            <button
+              onClick={() => setOpenPOI(null)}
+              style={{
+                position: 'absolute', top: 20, right: 20, zIndex: 10,
+                width: 34, height: 34, borderRadius: '50%',
+                background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'white', fontSize: 15, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >✕</button>
+
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.75) 55%, transparent 100%)',
+              padding: '48px 28px 36px',
+            }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12,
+                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
+                padding: '4px 12px', borderRadius: 99,
+              }}>
+                <span style={{ fontSize: 13 }}>{openPOI.icon}</span>
+                <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>{openPOI.name}</span>
+              </div>
+
+              <h2 style={{ color: 'white', fontSize: 26, fontWeight: 700, margin: '0 0 10px', lineHeight: 1.2 }}>
+                {openPOI.title}
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.65, margin: '0 0 26px' }}>
+                {openPOI.desc}
+              </p>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button style={{
+                  padding: '10px 22px', borderRadius: 99,
+                  background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)',
+                  border: '1.5px solid rgba(255,255,255,0.38)',
+                  color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                }}>Firsthand</button>
+                <button style={{
+                  padding: '10px 22px', borderRadius: 99,
+                  background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)',
+                  border: '1.5px solid rgba(255,255,255,0.38)',
+                  color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                }}>Context</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Draggable bottom sheet ── */}
       <div style={{
@@ -182,7 +284,7 @@ export default function RouteOverview() {
         boxShadow: '0 -6px 32px rgba(0,0,0,0.13)',
         transition: isAnimating ? 'top 0.3s cubic-bezier(0.32,0.72,0,1)' : 'none',
         zIndex: 10,
-        display: 'flex', flexDirection: 'column',
+        display: 'flex', flexDirection: 'column'
       }}>
         {/* Drag handle */}
         <div
@@ -197,18 +299,20 @@ export default function RouteOverview() {
 
         {/* Content */}
         <div style={{ padding: '8px 24px 36px', overflowY: 'auto', flex: 1 }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#0a0a0a', marginBottom: 16, letterSpacing: '-0.5px', textAlign: 'center' }}>
-            Your Journey
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#0a0a0a', marginBottom: 16, 
+            letterSpacing: '-0.5px', textAlign: 'center'
+          }}>
+            11th & Pine
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
             {TAGS.map(tag => (
               <span key={tag} style={{
                 padding: '6px 16px',
-                border: '1.5px solid #d1d5db',
-                borderRadius: 999,
+                border: '1.5px solid #1d4ed8',
+                borderRadius: 16,
                 fontSize: 13, fontWeight: 500,
-                color: '#374151',
+                color: '#374151'
               }}>
                 {tag}
               </span>
@@ -219,20 +323,29 @@ export default function RouteOverview() {
             Follow the main route first, then choose your own path to explore different perspectives.
           </p>
 
-          <button
-            onClick={() => navigate('/map/navigate')}
-            style={{
-              width: '100%',
-              background: '#84C4FF',
-              color: '#0a0a0a', border: 'none',
-              padding: '16px', borderRadius: 16,
-              fontSize: 16, fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            Let's Start →
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={() => navigate('/map/walking')}
+              style={{
+                flex: 1, background: '#1d4ed8', color: 'white', padding: '16px', borderRadius: 16, fontSize: 16, 
+                fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+              }}
+            >
+              Let's Start Your Journey →
+            </button>
+            <button
+              onClick={() => navigate('/perspectives')}
+              style={{
+                width: 56, height: 56,
+                background: '#f3f4f6',
+                borderRadius: 16, fontSize: 22,
+                cursor: 'pointer', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              📖
+            </button>
+          </div>
         </div>
       </div>
 
