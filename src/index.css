@@ -1,1 +1,70 @@
 @import "tailwindcss";
+
+/* ── Global resets ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #0f172a;
+  color: white;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Phone shell ────────────────────────────────────────────────────────────── */
+.phone-shell {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+/* On desktop: render as a centered phone */
+@media (min-width: 520px) {
+  body { background: #0f172a; }
+
+  #root {
+    background: radial-gradient(ellipse at 50% 40%, #1e293b 0%, #0a0f1e 100%);
+    min-height: 100vh;
+  }
+
+  .phone-shell {
+    /* Size adjustable via DevTools */
+  }
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes walkerPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50%       { transform: scale(2); opacity: 0;   }
+}
+@keyframes userPing {
+  0%, 100% { transform: scale(1); opacity: 1;   }
+  50%       { transform: scale(1.5); opacity: 0.4; }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0);     }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0);    }
+  50%       { transform: translateY(-8px); }
+}
+
+
