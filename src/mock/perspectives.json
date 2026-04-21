@@ -2,36 +2,66 @@
   "perspectives": [
     {
       "id": "1",
-      "name": "Alex",
-      "role": "Community Organizer",
-      "shortBio": "Alex was one of the first organizers on the ground during CHOP.",
-      "fullBio": "Alex has been a community organizer in Capitol Hill for over a decade. During CHOP, Alex helped coordinate daily community meetings and resource distribution.",
+      "name": "Westlake",
+      "role": "Core Narrative",
+      "featuredShortTitle": "Westlake",
+      "featuredTitle": "WESTLAKE PROTEST",
+
+      "shortBio": "Walk through the heart of CHOP and explore key protest spaces.",
+
+      "fullBio": "Walk through the heart of CHOP and listen to stories tied to the streets where events unfolded. This route traces several key gathering points inside the Capitol Hill Autonomous Zone, including spaces where community assemblies, mutual aid efforts, and protest art emerged during the summer of 2020.",
+
       "routeId": "main",
-      "audioUrl": "/audio/perspective-1.mp3",
-      "imageUrl": "/images/perspective-1.jpg",
+      "audioUrl": "/audio/westlake.mp3",
+      "imageUrl": "/images/westlake.jpg",
+
+      "location": [47.6131, -122.3371],
+      "stopName": "Westlake Station",
+
+      "durationText": "25 Minutes",
+      "tapCount": "10 Points",
+      "previewDuration": "0:30",
+
       "stops": [1, 2, 3]
     },
     {
       "id": "2",
-      "name": "Jordan",
-      "role": "Local Resident",
-      "shortBio": "Jordan lived two blocks from Cal Anderson Park during CHOP.",
-      "fullBio": "Jordan has called Capitol Hill home for five years. Living just blocks away, Jordan witnessed the transformation of the neighborhood firsthand and participated in community events.",
+      "name": "Alex",
+      "role": "Community Organizer",
+      "shortBio": "Hidden connections and forgotten service paths.",
+      "fullBio": "Alex has been a community organizer in Capitol Hill for over a decade. During CHOP, Alex helped coordinate daily community meetings and resource distribution.",
+
       "routeId": "main",
-      "audioUrl": "/audio/perspective-2.mp3",
-      "imageUrl": "/images/perspective-2.jpg",
-      "stops": [2, 3]
+      "audioUrl": "/audio/perspective-1.mp3",
+      "imageUrl": "/images/perspective-1.jpg",
+
+      "location": [47.6152, -122.325]
     },
     {
       "id": "3",
+      "name": "Jordan",
+      "role": "Local Resident",
+      "shortBio": "Documenting the growth and ecological memory of urban green spaces.",
+      "fullBio": "Jordan has called Capitol Hill home for five years. Living just blocks away, Jordan witnessed the transformation of the neighborhood firsthand and participated in community events.",
+
+      "routeId": "main",
+      "audioUrl": "/audio/perspective-2.mp3",
+      "imageUrl": "/images/perspective-2.jpg",
+
+      "location": [47.616, -122.322]
+    },
+    {
+      "id": "4",
       "name": "Sam",
       "role": "Street Medic",
-      "shortBio": "Sam volunteered as a street medic throughout the duration of CHOP.",
+      "shortBio": "Providing care and safety during moments of unrest.",
       "fullBio": "Sam trained as an EMT and volunteered their skills during CHOP, helping set up and run the community medical station near Cal Anderson Park.",
+
       "routeId": "main",
       "audioUrl": "/audio/perspective-3.mp3",
       "imageUrl": "/images/perspective-3.jpg",
-      "stops": [1, 2, 3]
+
+      "location": [47.614, -122.329]
     }
   ]
 }

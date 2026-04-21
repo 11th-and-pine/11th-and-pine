@@ -1,193 +1,344 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 import { getPerspectiveById } from '../../services/dataService'
+
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
+
+const mainRoute = [
+  [47.6131, -122.3371],
+  [47.6138, -122.3340],
+  [47.6145, -122.33],
+  [47.6152, -122.325],
+  [47.6158, -122.322],
+  [47.6165, -122.3197],
+]
 
 function PerspectiveDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const perspective = getPerspectiveById(id)
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoaded(true), 80)
-    return () => clearTimeout(timer)
-  }, [])
+  const perspective = getPerspectiveById(Number(id))
 
   if (!perspective) {
     return (
       <div style={styles.page}>
-        <div style={styles.container}>
-          <div style={styles.topLabel}>PERSPECTIVE</div>
-          <h1 style={styles.title}>Perspective not found</h1>
-          <p style={styles.subtitle}>
-            We couldn’t find the story you were looking for.
-          </p>
-        </div>
-
-        <div style={styles.bottomBar}>
-          <button style={styles.primaryButton} onClick={() => navigate('/perspectives')}>
-            Back
+        <div style={styles.notFoundWrap}>
+          <button style={styles.backCircleFallback} onClick={() => navigate('/perspectives')}>
+            ←
           </button>
+          <h1 style={styles.notFoundTitle}>Perspective not found</h1>
         </div>
       </div>
     )
   }
 
+  const mapCenter = perspective.location || [47.6148, -122.328]
+  const audioDuration = perspective.previewDuration || '0:30'
+  const durationText = perspective.durationText || '25 Minutes'
+  const tapCount = perspective.tapCount || '10 Points'
+
   return (
     <div style={styles.page}>
-      <div
-        style={{
-          ...styles.container,
-          opacity: loaded ? 1 : 0,
-          transform: loaded ? 'translateY(0)' : 'translateY(18px)',
-          transition: 'all 0.45s ease',
-        }}
-      >
-        <div style={styles.topLabel}>PERSPECTIVE</div>
+      <div style={styles.scrollArea}>
+        <div style={styles.hero}>
+          <img
+            src={
+              perspective.imageUrl ||
+              'https://images.unsplash.com/photo-1593113598332-cd59a93a9c98?auto=format&fit=crop&w=1200&q=80'
+            }
+            alt={perspective.name}
+            style={styles.heroImage}
+          />
 
-        <div style={styles.heroRow}>
-          <div style={styles.iconBox}>
-            <span style={styles.iconText}>
-              {perspective.name?.charAt(0)?.toUpperCase() || '?'}
-            </span>
+          <button style={styles.backCircle} onClick={() => navigate('/perspectives')}>
+            ←
+          </button>
+
+          <div style={styles.mapPreviewCard}>
+            <div style={styles.mapPreviewInner}>
+              <MapContainer
+                center={mapCenter}
+                zoom={14}
+                style={styles.miniMap}
+                zoomControl={false}
+                dragging={false}
+                doubleClickZoom={false}
+                scrollWheelZoom={false}
+                touchZoom={false}
+                boxZoom={false}
+                keyboard={false}
+                attributionControl={false}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <Polyline positions={mainRoute} color="#2563eb" weight={4} />
+                {perspective.location && <Marker position={perspective.location} />}
+              </MapContainer>
+            </div>
           </div>
 
-          <div>
-            <h1 style={styles.title}>{perspective.name}</h1>
-            <p style={styles.role}>{perspective.role}</p>
+          <div style={styles.heroTitleWrap}>
+            <h1 style={styles.heroTitle}>
+              {perspective.featuredShortTitle || perspective.name}
+            </h1>
           </div>
         </div>
 
-        <div style={styles.section}>
-          <p style={styles.bodyText}>{perspective.fullBio}</p>
-        </div>
+        <div style={styles.content}>
+          <h2 style={styles.sectionTitle}>Description</h2>
 
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Listen</h2>
-          {perspective.audioUrl ? (
-            <audio controls src={perspective.audioUrl} style={styles.audioPlayer}>
-              Your browser does not support the audio element.
-            </audio>
-          ) : (
-            <p style={styles.audioFallback}>
-              Audio is not available for this perspective yet.
-            </p>
-          )}
+          <div style={styles.metaRow}>
+            <div style={styles.metaItem}>
+              <div style={styles.metaIcon}>◔</div>
+              <div>
+                <p style={styles.metaLabel}>Time</p>
+                <p style={styles.metaValue}>{durationText}</p>
+              </div>
+            </div>
+
+            <div style={styles.metaItem}>
+              <div style={styles.metaIcon}>⌖</div>
+              <div>
+                <p style={styles.metaLabel}>Taps</p>
+                <p style={styles.metaValue}>{tapCount}</p>
+              </div>
+            </div>
+          </div>
+
+          <p style={styles.descriptionText}>
+            {perspective.fullBio}
+          </p>
         </div>
       </div>
 
-      <div style={styles.bottomBar}>
-        <button style={styles.primaryButton} onClick={() => navigate('/perspectives')}>
-          Back
-        </button>
+      <div style={styles.audioBar}>
+        <div style={styles.audioInfo}>
+          <p style={styles.audioLabel}>Preview</p>
+          <p style={styles.audioTime}>0:00 / {audioDuration}</p>
+        </div>
+
+        {perspective.audioUrl ? (
+          <button
+            style={styles.playButton}
+            onClick={() => {
+              const audio = document.getElementById('perspective-audio-player')
+              if (audio) audio.play()
+            }}
+          >
+            ▶
+          </button>
+        ) : (
+          <button style={{ ...styles.playButton, opacity: 0.5 }} disabled>
+            ▶
+          </button>
+        )}
       </div>
+
+      {perspective.audioUrl && (
+        <audio
+          id="perspective-audio-player"
+          src={perspective.audioUrl}
+          preload="metadata"
+          style={{ display: 'none' }}
+        />
+      )}
     </div>
   )
 }
 
 const styles = {
   page: {
-    minHeight: '100%',
-    backgroundColor: '#f3f3f1',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
-    padding: '24px 24px 32px',
-    boxSizing: 'border-box',
+    backgroundColor: '#f3f3f1',
+    overflow: 'hidden',
   },
-  container: {
-    maxWidth: '900px',
+  scrollArea: {
+    flex: 1,
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
+  },
+  hero: {
+    position: 'relative',
     width: '100%',
-    margin: '0 auto',
+    height: '540px',
+    overflow: 'hidden',
+    borderBottomLeftRadius: '36px',
+    borderBottomRightRadius: '36px',
   },
-  topLabel: {
-    fontSize: '14px',
-    letterSpacing: '2px',
-    fontWeight: '700',
-    color: '#db5c49',
-    marginBottom: '28px',
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
   },
-  heroRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    marginBottom: '26px',
-  },
-  iconBox: {
-    width: '68px',
-    height: '68px',
-    borderRadius: '14px',
-    backgroundColor: '#9cc8eb',
+  backCircle: {
+    position: 'absolute',
+    top: '20px',
+    left: '20px',
+    width: '56px',
+    height: '56px',
+    borderRadius: '50%',
+    border: 'none',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+    fontSize: '30px',
+    cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
+    color: '#111',
   },
-  iconText: {
-    fontSize: '30px',
-    fontWeight: '700',
-    color: '#3b3b3b',
-    fontFamily: 'Georgia, "Times New Roman", serif',
+  mapPreviewCard: {
+    position: 'absolute',
+    right: '18px',
+    bottom: '26px',
+    width: '118px',
+    height: '118px',
+    borderRadius: '22px',
+    backgroundColor: '#ffffff',
+    padding: '4px',
+    boxShadow: '0 8px 18px rgba(0,0,0,0.2)',
   },
-  title: {
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    fontSize: '52px',
-    lineHeight: 1.05,
-    fontWeight: '700',
-    color: '#2f2f2f',
+  mapPreviewInner: {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    borderRadius: '18px',
+  },
+  miniMap: {
+    width: '100%',
+    height: '100%',
+  },
+  heroTitleWrap: {
+    position: 'absolute',
+    left: '20px',
+    bottom: '34px',
+    right: '150px',
+  },
+  heroTitle: {
     margin: 0,
+    color: '#fff',
+    fontSize: '42px',
+    lineHeight: 1.02,
+    fontWeight: '800',
+    letterSpacing: '-1px',
   },
-  role: {
-    margin: '10px 0 0 0',
-    fontSize: '22px',
-    color: '#66635f',
-  },
-  subtitle: {
-    fontSize: '22px',
-    lineHeight: 1.5,
-    color: '#66635f',
-    margin: 0,
-  },
-  section: {
-    marginTop: '24px',
-  },
-  bodyText: {
-    fontSize: '24px',
-    lineHeight: 1.65,
-    color: '#66635f',
-    margin: 0,
-    maxWidth: '820px',
+  content: {
+    padding: '22px 20px 28px',
   },
   sectionTitle: {
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    fontSize: '28px',
-    color: '#2f2f2f',
-    margin: '0 0 14px 0',
+    fontSize: '30px',
+    lineHeight: 1.1,
+    fontWeight: '800',
+    color: '#000',
+    margin: '0 0 22px 0',
   },
-  audioPlayer: {
-    width: '100%',
-    maxWidth: '520px',
+  metaRow: {
+    display: 'flex',
+    gap: '34px',
+    marginBottom: '26px',
   },
-  audioFallback: {
-    fontSize: '18px',
-    color: '#66635f',
+  metaItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  metaIcon: {
+    width: '34px',
+    height: '34px',
+    borderRadius: '50%',
+    border: '2px solid #5c84ff',
+    color: '#5c84ff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    flexShrink: 0,
+  },
+  metaLabel: {
     margin: 0,
+    fontSize: '12px',
+    color: '#9a9a9a',
+    fontWeight: '600',
   },
-  bottomBar: {
-    maxWidth: '900px',
-    width: '100%',
-    margin: '36px auto 0',
-  },
-  primaryButton: {
-    width: '100%',
-    backgroundColor: '#c73d2c',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '18px 20px',
+  metaValue: {
+    margin: 0,
     fontSize: '18px',
+    color: '#2d2d2d',
     fontWeight: '700',
+  },
+  descriptionText: {
+    margin: 0,
+    fontSize: '18px',
+    lineHeight: 1.28,
+    color: '#111',
+  },
+  audioBar: {
+    height: '112px',
+    minHeight: '112px',
+    backgroundColor: '#f8f8f8',
+    borderTop: '1px solid #d9d9d9',
+    padding: '14px 20px 18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexShrink: 0,
+  },
+  audioInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  audioLabel: {
+    margin: 0,
+    fontSize: '14px',
+    color: '#a1a1a1',
+  },
+  audioTime: {
+    margin: '8px 0 0 0',
+    fontSize: '28px',
+    lineHeight: 1,
+    fontWeight: '800',
+    color: '#000',
+  },
+  playButton: {
+    width: '72px',
+    height: '72px',
+    borderRadius: '50%',
+    border: 'none',
+    backgroundColor: '#1560f2',
+    color: '#fff',
+    fontSize: '34px',
     cursor: 'pointer',
+    boxShadow: '0 6px 14px rgba(21,96,242,0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: '6px',
+  },
+  notFoundWrap: {
+    padding: '24px',
+  },
+  backCircleFallback: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '50%',
+    border: 'none',
+    backgroundColor: '#fff',
+    fontSize: '30px',
+    cursor: 'pointer',
+    marginBottom: '20px',
+  },
+  notFoundTitle: {
+    fontSize: '28px',
+    margin: 0,
   },
 }
 
