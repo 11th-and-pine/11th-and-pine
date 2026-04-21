@@ -6,7 +6,7 @@ export const getRoutes = () => {
 }
 
 export const getRouteById = (id) => {
-  return routesData.routes.find(route => route.id === id)
+  return routesData.routes.find(route => String(route.id) === String(id))
 }
 
 export const getPerspectives = () => {
@@ -14,5 +14,5 @@ export const getPerspectives = () => {
 }
 
 export const getPerspectiveById = (id) => {
-  return perspectivesData.perspectives.find(p => p.id === id)
+  return perspectivesData.perspectives.find(p => String(p.id) === String(id))
 }

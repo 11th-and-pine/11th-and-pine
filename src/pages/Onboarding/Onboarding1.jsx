@@ -84,7 +84,7 @@ function Onboarding1() {
           </button>
 
           <p
-            onClick={() => navigate('/map')}
+            onClick={() => navigate('/map/overview')}
             className="text-center text-[#b9b9b9] text-xs mt-4 underline cursor-pointer"
           >
             Privacy Policy

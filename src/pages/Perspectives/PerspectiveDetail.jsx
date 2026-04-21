@@ -87,7 +87,7 @@ function PerspectiveDetail() {
 
 const styles = {
   page: {
-    minHeight: '100vh',
+    minHeight: '100%',
     backgroundColor: '#f3f3f1',
     display: 'flex',
     flexDirection: 'column',
