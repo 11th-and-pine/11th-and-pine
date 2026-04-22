@@ -1,24 +1,35 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
+import Map, { Marker, Source, Layer } from 'react-map-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import { getPerspectiveById } from '../../services/dataService'
 
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 
 const mainRoute = [
-  [47.6131, -122.3371],
-  [47.6138, -122.3340],
-  [47.6145, -122.33],
-  [47.6152, -122.325],
-  [47.6158, -122.322],
-  [47.6165, -122.3197],
+  [-122.3371, 47.6131],
+  [-122.3340, 47.6138],
+  [-122.33, 47.6145],
+  [-122.325, 47.6152],
+  [-122.322, 47.6158],
+  [-122.3197, 47.6165],
 ]
+
+const routeGeoJSON = {
+  type: 'Feature',
+  geometry: {
+    type: 'LineString',
+    coordinates: mainRoute,
+  },
+}
+
+const routeLayer = {
+  id: 'route-line',
+  type: 'line',
+  paint: {
+    'line-color': '#2563eb',
+    'line-width': 4,
+  },
+}
 
 function PerspectiveDetail() {
   const navigate = useNavigate()
@@ -38,7 +49,10 @@ function PerspectiveDetail() {
     )
   }
 
-  const mapCenter = perspective.location || [47.6148, -122.328]
+  const mapCenter = perspective.location
+    ? { longitude: perspective.location[1], latitude: perspective.location[0] }
+    : { longitude: -122.328, latitude: 47.6148 }
+
   const audioDuration = perspective.previewDuration || '0:30'
   const durationText = perspective.durationText || '25 Minutes'
   const tapCount = perspective.tapCount || '10 Points'
@@ -62,23 +76,36 @@ function PerspectiveDetail() {
 
           <div style={styles.mapPreviewCard}>
             <div style={styles.mapPreviewInner}>
-              <MapContainer
-                center={mapCenter}
-                zoom={14}
+              <Map
+                mapboxAccessToken={MAPBOX_TOKEN}
+                initialViewState={{
+                  longitude: mapCenter.longitude,
+                  latitude: mapCenter.latitude,
+                  zoom: 14,
+                }}
                 style={styles.miniMap}
-                zoomControl={false}
-                dragging={false}
-                doubleClickZoom={false}
-                scrollWheelZoom={false}
-                touchZoom={false}
-                boxZoom={false}
-                keyboard={false}
+                mapStyle="mapbox://styles/mapbox/streets-v12"
                 attributionControl={false}
+                dragPan={false}
+                scrollZoom={false}
+                doubleClickZoom={false}
+                touchZoomRotate={false}
+                keyboard={false}
               >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <Polyline positions={mainRoute} color="#2563eb" weight={4} />
-                {perspective.location && <Marker position={perspective.location} />}
-              </MapContainer>
+                <Source id="route" type="geojson" data={routeGeoJSON}>
+                  <Layer {...routeLayer} />
+                </Source>
+
+                {perspective.location && (
+                  <Marker
+                    longitude={perspective.location[1]}
+                    latitude={perspective.location[0]}
+                    anchor="bottom"
+                  >
+                    <div style={styles.markerDot} />
+                  </Marker>
+                )}
+              </Map>
             </div>
           </div>
 
@@ -110,9 +137,7 @@ function PerspectiveDetail() {
             </div>
           </div>
 
-          <p style={styles.descriptionText}>
-            {perspective.fullBio}
-          </p>
+          <p style={styles.descriptionText}>{perspective.fullBio}</p>
         </div>
       </div>
 
@@ -194,6 +219,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     color: '#111',
+    zIndex: 3,
   },
   mapPreviewCard: {
     position: 'absolute',
@@ -205,6 +231,7 @@ const styles = {
     backgroundColor: '#ffffff',
     padding: '4px',
     boxShadow: '0 8px 18px rgba(0,0,0,0.2)',
+    zIndex: 2,
   },
   mapPreviewInner: {
     width: '100%',
@@ -216,11 +243,20 @@ const styles = {
     width: '100%',
     height: '100%',
   },
+  markerDot: {
+    width: '16px',
+    height: '16px',
+    borderRadius: '50%',
+    backgroundColor: '#1560f2',
+    border: '3px solid white',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+  },
   heroTitleWrap: {
     position: 'absolute',
     left: '20px',
     bottom: '34px',
     right: '150px',
+    zIndex: 2,
   },
   heroTitle: {
     margin: 0,
