@@ -18,7 +18,15 @@ const MAIN_ROUTE = [
   [47.61534637433494, -122.31998484534672], // Cal Anderson Park
 ]
 
-// Regions defined purely by geography — no step coupling
+// ~10ft ≈ 0.000030 degrees latitude offset — walker drifts slightly off route
+const WRONG_PATH_ROUTE = [
+  [47.61208726167953, -122.33701558200671], // same start
+  [47.61215, -122.33680], // slight drift
+  [47.61240, -122.33590], // drifting further off
+  [47.61290, -122.33450], // clearly off route
+  [47.61320, -122.33350], // deep off route
+]
+
 const REGIONS = [
   {
     id: 'westlake',
@@ -82,7 +90,6 @@ const POIS = [
   },
 ]
 
-// Ray-casting point-in-polygon (lng, lat order)
 function pointInPolygon(lng, lat, polygon) {
   let inside = false
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -112,6 +119,51 @@ function calcBearing([lat1, lng1], [lat2, lng2]) {
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
 }
 
+// Haversine distance in feet between two [lat, lng] points
+function distanceFeet([lat1, lng1], [lat2, lng2]) {
+  const R = 20902231 // Earth radius in feet
+  const toRad = d => d * Math.PI / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+// Min distance from point to any segment on the route
+function distanceToRoute(point, route) {
+  let minDist = Infinity
+  for (let i = 0; i < route.length - 1; i++) {
+    minDist = Math.min(minDist, distanceFeet(point, route[i]))
+  }
+  return minDist
+}
+
+// Error sound using Web Audio API
+function playErrorSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const playTone = (freq, start, duration, type = 'sine') => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = type
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start)
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + start)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration)
+      osc.start(ctx.currentTime + start)
+      osc.stop(ctx.currentTime + start + duration)
+    }
+    // Descending alert tones
+    playTone(880, 0, 0.18, 'square')
+    playTone(660, 0.22, 0.18, 'square')
+    playTone(440, 0.44, 0.28, 'square')
+  } catch (e) {
+    // AudioContext not available
+  }
+}
+
 export default function GuidedWalk() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -124,12 +176,20 @@ export default function GuidedWalk() {
 
   const route = branchRoute ? branchRoute.path : MAIN_ROUTE
   const routeColor = branchRoute ? branchRoute.color : '#5272FF'
+
   const [step, setStep] = useState(0)
   const [simulating, setSimulating] = useState(false)
   const [done, setDone] = useState(false)
   const [triggeredPOIs, setTriggeredPOIs] = useState(new Set())
   const [pendingPOI, setPendingPOI] = useState(null)
   const [openPOI, setOpenPOI] = useState(null)
+
+  // Wrong path simulation state
+  const [wrongPathMode, setWrongPathMode] = useState(false)
+  const [wrongStep, setWrongStep] = useState(0)
+  const [offRouteAlert, setOffRouteAlert] = useState(false)
+  const [alertDismissed, setAlertDismissed] = useState(false)
+  const wrongSimTimer = useRef(null)
 
   // Audio player state
   const [audioPlaying, setAudioPlaying] = useState(false)
@@ -152,21 +212,29 @@ export default function GuidedWalk() {
 
   const simTimer = useRef(null)
 
-  const currentPoint = route[step] || route[route.length - 1] || MAIN_ROUTE[0]
+  // Current position: wrong path overrides normal position
+  const normalPoint = route[step] || route[route.length - 1] || MAIN_ROUTE[0]
+  const wrongPoint = WRONG_PATH_ROUTE[Math.min(wrongStep, WRONG_PATH_ROUTE.length - 1)]
+  const currentPoint = wrongPathMode ? wrongPoint : normalPoint
   const [curLat, curLng] = currentPoint
   const activeRegion = getActiveRegion(curLat, curLng)
 
-  const traveled = route.slice(0, step + 1)
+  const traveled = wrongPathMode
+    ? WRONG_PATH_ROUTE.slice(0, wrongStep + 1)
+    : route.slice(0, step + 1)
 
   // Camera
   useEffect(() => {
     if (!mapRef.current || !currentPoint) return
+    const isMoving = simulating || wrongPathMode
 
-    if (simulating) {
-      const nextIdx = Math.min(step + 1, route.length - 1)
-      const bearing = step < route.length - 1
-        ? calcBearing(route[step], route[nextIdx])
-        : mapRef.current.getBearing()
+    if (isMoving) {
+      const currentRoute = wrongPathMode ? WRONG_PATH_ROUTE : route
+      const currentStep = wrongPathMode ? wrongStep : step
+      const nextIdx = Math.min(currentStep + 1, currentRoute.length - 1)
+      const bearing = currentStep < currentRoute.length - 1
+        ? calcBearing(currentRoute[currentStep], currentRoute[nextIdx])
+        : mapRef.current.getBearing?.() ?? 0
 
       mapRef.current.easeTo({
         center: toLngLat(currentPoint),
@@ -184,47 +252,103 @@ export default function GuidedWalk() {
         duration: 700,
       })
     }
-  }, [step, simulating, route, currentPoint])
+  }, [step, wrongStep, simulating, wrongPathMode, route, currentPoint])
 
-  // Walk simulation
+  // Normal walk simulation
   useEffect(() => {
-    if (simulating && !done) {
+    if (simulating && !done && !wrongPathMode) {
       simTimer.current = setInterval(() => {
         setStep(prev => {
           const next = prev + 1
-
           if (next >= route.length - 1) {
             setSimulating(false)
             setDone(true)
             return route.length - 1
           }
-
           return next
         })
-      }, 1400)
+      }, 1800)
     } else {
       clearInterval(simTimer.current)
       simTimer.current = null
     }
+    return () => { clearInterval(simTimer.current); simTimer.current = null }
+  }, [simulating, done, wrongPathMode, route])
 
-    return () => {
-      clearInterval(simTimer.current)
-      simTimer.current = null
+  // Wrong path simulation
+  useEffect(() => {
+    if (wrongPathMode) {
+      wrongSimTimer.current = setInterval(() => {
+        setWrongStep(prev => {
+          const next = prev + 1
+          if (next >= WRONG_PATH_ROUTE.length) {
+            clearInterval(wrongSimTimer.current)
+            return prev
+          }
+
+          // Check distance from main route
+          const newPos = WRONG_PATH_ROUTE[next]
+          const distFt = distanceToRoute(newPos, MAIN_ROUTE)
+
+          if (distFt > 15 && !alertDismissed) {
+            setOffRouteAlert(true)
+            // Vibrate: 3 short bursts
+            if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300])
+            playErrorSound()
+          }
+
+          return next
+        })
+      }, 1800)
+    } else {
+      clearInterval(wrongSimTimer.current)
     }
-  }, [simulating, done, route])
+    return () => clearInterval(wrongSimTimer.current)
+  }, [wrongPathMode, alertDismissed])
 
+  const startWrongPath = () => {
+    // Reset everything first
+    setSimulating(false)
+    setDone(false)
+    setOffRouteAlert(false)
+    setAlertDismissed(false)
+    setWrongStep(0)
+    clearInterval(simTimer.current)
+    clearInterval(wrongSimTimer.current)
+    // Small delay before starting
+    setTimeout(() => setWrongPathMode(true), 300)
+  }
+
+  const stopWrongPath = () => {
+    setWrongPathMode(false)
+    setOffRouteAlert(false)
+    setAlertDismissed(false)
+    setWrongStep(0)
+    clearInterval(wrongSimTimer.current)
+  }
+
+  const dismissOffRouteAlert = () => {
+    setOffRouteAlert(false)
+    setAlertDismissed(true)
+  }
+
+  // Reset on route change
   useEffect(() => {
     setStep(0)
     setSimulating(false)
     setDone(false)
     setTriggeredPOIs(new Set())
     setPendingPOI(null)
-
+    setWrongPathMode(false)
+    setOffRouteAlert(false)
+    setAlertDismissed(false)
+    setWrongStep(0)
     clearInterval(simTimer.current)
+    clearInterval(wrongSimTimer.current)
     simTimer.current = null
   }, [route])
 
-  // POI proximity — trigger once per POI when step passes its triggerStep
+  // POI proximity
   useEffect(() => {
     POIS.forEach(poi => {
       if (step >= poi.triggerStep && !triggeredPOIs.has(poi.id)) {
@@ -238,6 +362,36 @@ export default function GuidedWalk() {
 
   return (
     <div style={{ height: '100%', width: '100%', position: 'relative', overflow: 'hidden' }}>
+      <style>{`
+        @keyframes walkerPulse {
+          0% { transform: scale(1); opacity: 0.7; }
+          70% { transform: scale(2.2); opacity: 0; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes slideDown {
+          from { transform: translateY(-16px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes alertSlideUp {
+          from { transform: translateY(40px) scale(0.94); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes alertPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+          50% { box-shadow: 0 0 0 18px rgba(220, 38, 38, 0); }
+        }
+        @keyframes iconSpin {
+          0% { transform: rotate(-15deg); }
+          50% { transform: rotate(15deg); }
+          100% { transform: rotate(-15deg); }
+        }
+        @keyframes wrongWalkerPulse {
+          0% { transform: scale(1); opacity: 0.8; }
+          70% { transform: scale(2.5); opacity: 0; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+      `}</style>
+
       <Map
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
@@ -246,8 +400,7 @@ export default function GuidedWalk() {
         mapStyle="mapbox://styles/mapbox/light-v11"
         attributionControl={false}
       >
-
-        {/* Full route — faint (unwalked preview) */}
+        {/* Full route — faint preview */}
         <Source id="full-route" type="geojson" data={makeLine(route)}>
           <Layer id="full-route-line" type="line"
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
@@ -255,11 +408,15 @@ export default function GuidedWalk() {
           />
         </Source>
 
-        {/* Traveled path — same color, much higher opacity = visually darker */}
+        {/* Traveled path */}
         <Source id="traveled" type="geojson" data={makeLine(traveled)}>
           <Layer id="traveled-line" type="line"
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            paint={{ 'line-color': routeColor, 'line-width': 5, 'line-opacity': 0.9 }}
+            paint={{
+              'line-color': wrongPathMode ? '#ef4444' : routeColor,
+              'line-width': 5,
+              'line-opacity': 0.9
+            }}
           />
         </Source>
 
@@ -284,19 +441,27 @@ export default function GuidedWalk() {
         ))}
 
         {/* Walker dot */}
-        {!done && <Marker longitude={toLngLat(currentPoint)[0]} latitude={toLngLat(currentPoint)[1]} anchor="center">
-          <div style={{ position: 'relative', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: `${routeColor}33`,
-              borderRadius: '50%',
-              animation: 'walkerPulse 1.8s ease-out infinite'
-            }} />
-            <div style={{ width: 14, height: 14, background: routeColor, border: '3px solid white', 
-              borderRadius: '50%', boxShadow: `0 2px 10px ${routeColor}b3` 
-            }} />
-          </div>
-        </Marker>}
+        {!done && (
+          <Marker longitude={toLngLat(currentPoint)[0]} latitude={toLngLat(currentPoint)[1]} anchor="center">
+            <div style={{ position: 'relative', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: wrongPathMode ? 'rgba(239,68,68,0.3)' : `${routeColor}33`,
+                borderRadius: '50%',
+                animation: wrongPathMode ? 'wrongWalkerPulse 1.2s ease-out infinite' : 'walkerPulse 1.8s ease-out infinite'
+              }} />
+              <div style={{
+                width: 14, height: 14,
+                background: wrongPathMode ? '#ef4444' : routeColor,
+                border: '3px solid white',
+                borderRadius: '50%',
+                boxShadow: wrongPathMode
+                  ? '0 2px 10px rgba(239,68,68,0.7)'
+                  : `0 2px 10px ${routeColor}b3`
+              }} />
+            </div>
+          </Marker>
+        )}
       </Map>
 
       {/* Top bar */}
@@ -328,13 +493,20 @@ export default function GuidedWalk() {
 
           <div style={{
             flex: 1, minWidth: 0,
-            background: 'white',
+            background: wrongPathMode ? 'rgba(254,242,242,0.95)' : 'white',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
             borderRadius: 14,
             padding: '6px 14px',
+            border: wrongPathMode ? '1px solid rgba(252,165,165,0.5)' : 'none',
+            transition: 'background 0.3s, border 0.3s',
           }}>
-            {activeRegion ? (
+            {wrongPathMode ? (
+              <>
+                <div style={{ color: '#dc2626', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em' }}>SIMULATION</div>
+                <div style={{ color: '#dc2626', fontSize: 13, fontWeight: 600 }}>Wrong Path Active</div>
+              </>
+            ) : activeRegion ? (
               <>
                 <div style={{ color: '#2D4258', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em' }}>NOW IN</div>
                 <div style={{ color: routeColor, fontSize: 13, fontWeight: 600 }}>{activeRegion.label}</div>
@@ -346,7 +518,6 @@ export default function GuidedWalk() {
             )}
           </div>
         </div>
-
       </div>
 
       {/* POI notification banner */}
@@ -391,16 +562,52 @@ export default function GuidedWalk() {
       )}
 
       {/* Simulate button */}
-      {!done && (
+      {!done && !wrongPathMode && (
         <div style={{ position: 'absolute', right: 14, bottom: 200, zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <button onClick={() => setSimulating(v => !v)} style={{
-            width: 50, height: 50, borderRadius: '50%', 
+            width: 50, height: 50, borderRadius: '50%',
             background: '#7D92A7',
             backdropFilter: 'blur(8px)', color: 'white', fontSize: 18, cursor: 'pointer',
             boxShadow: '0 3px 14px rgba(0,0,0,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>{simulating ? '⏸' : '▶'}</button>
-          <span style={{ color: 'white', fontSize: 10, fontWeight: 600, background: 'rgba(0,0,0,0.45)', padding: '2px 7px', borderRadius: 8 }}>Walking Simulation</span>
+          <span style={{ color: 'white', fontSize: 10, fontWeight: 600, background: 'rgba(0,0,0,0.45)', padding: '2px 7px', borderRadius: 8, maxWidth: 64 }}>Walking Simulation</span>
+        </div>
+      )}
+
+      {/* Wrong Path button */}
+      {!done && (
+        <div style={{
+          position: 'absolute', right: 14, bottom: wrongPathMode ? 200 : 290,
+          zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          transition: 'bottom 0.3s ease',
+        }}>
+          {wrongPathMode ? (
+            <>
+              <button onClick={stopWrongPath} style={{
+                width: 50, height: 50, borderRadius: '50%',
+                background: '#ef4444',
+                color: 'white', fontSize: 18, cursor: 'pointer',
+                boxShadow: '0 3px 14px rgba(239,68,68,0.55)',
+                border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                animation: 'alertPulse 1.8s infinite',
+              }}>⏹</button>
+              <span style={{ color: 'white', fontSize: 10, fontWeight: 600, background: 'rgba(220,38,38,0.8)', padding: '2px 7px', borderRadius: 8 }}>Stop Test</span>
+            </>
+          ) : (
+            <>
+              <button onClick={startWrongPath} style={{
+                width: 50, height: 50, borderRadius: '50%',
+                background: 'rgba(239,68,68,0.85)',
+                backdropFilter: 'blur(8px)', color: 'white', fontSize: 20, cursor: 'pointer',
+                boxShadow: '0 3px 14px rgba(239,68,68,0.45)',
+                border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>⚠️</button>
+              <span style={{ color: 'white', fontSize: 10, fontWeight: 600, background: 'rgba(0,0,0,0.45)', padding: '2px 7px', borderRadius: 8, textAlign: 'center', maxWidth: 64 }}>Wrong Path Simulation</span>
+            </>
+          )}
         </div>
       )}
 
@@ -413,26 +620,23 @@ export default function GuidedWalk() {
           padding: '10px 16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {/* Play/pause button */}
             <button
               onClick={() => setAudioPlaying(v => !v)}
               style={{
                 width: 56, height: 56, borderRadius: '50%',
                 background: '#1d4ed8', color: 'white',
                 fontSize: 20, cursor: 'pointer', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none',
               }}
             >
               {audioPlaying ? '⏸' : '▶'}
             </button>
-
-            {/* Track info + progress */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Title</div>
               <div style={{ fontSize: 13, color: routeColor, marginBottom: 10 }}>
                 {branchRoute ? branchRoute.title : 'Main Route'}
               </div>
-              {/* Progress bar */}
               <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', borderRadius: 3,
@@ -441,7 +645,6 @@ export default function GuidedWalk() {
                   transition: 'width 0.15s linear'
                 }} />
               </div>
-              {/* Time */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                 <span style={{ fontSize: 12, color: '#9ca3af' }}>
                   {(() => { const s = Math.floor(audioProgress * 1.2); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` })()}
@@ -449,6 +652,102 @@ export default function GuidedWalk() {
                 <span style={{ fontSize: 12, color: '#9ca3af' }}>2:00</span>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════ */}
+      {/* OFF ROUTE ALERT MODAL                     */}
+      {/* ══════════════════════════════════════════ */}
+      {offRouteAlert && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 3000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '0 32px',
+          pointerEvents: 'none',
+        }}>
+          {/* Blurred map tint */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(0,0,0,0.18)',
+            backdropFilter: 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
+            pointerEvents: 'auto',
+          }} />
+
+          {/* Card */}
+          <div style={{
+            position: 'relative', zIndex: 1,
+            width: '100%', maxWidth: 340,
+            background: 'rgba(255,255,255,0.96)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: 28,
+            padding: '36px 28px 28px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.5)',
+            animation: 'alertSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+            pointerEvents: 'auto',
+          }}>
+            {/* Pulsing red icon circle */}
+            <div style={{
+              width: 72, height: 72,
+              borderRadius: '50%',
+              border: '2.5px solid #dc2626',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 22,
+              animation: 'alertPulse 1.6s ease-in-out infinite',
+              background: 'rgba(254,242,242,0.6)',
+            }}>
+              {/* Turn-back arrow icon matching the mockup */}
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"
+                style={{ animation: 'iconSpin 2s ease-in-out infinite' }}>
+                <path
+                  d="M10 20 C10 14 16 10 22 10 L22 6 L28 12 L22 18 L22 14 C18 14 14 17 14 22"
+                  stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <div style={{
+              fontSize: 22, fontWeight: 800,
+              color: '#0a0a0a',
+              textAlign: 'center',
+              marginBottom: 10,
+              letterSpacing: '-0.3px',
+            }}>
+              Off Route Alert
+            </div>
+
+            {/* Subtitle */}
+            <div style={{
+              fontSize: 15, color: '#6b7280',
+              textAlign: 'center',
+              lineHeight: 1.5,
+              marginBottom: 28,
+            }}>
+              Please return to the original route.
+            </div>
+
+            {/* Dismiss button */}
+            <button
+              onClick={dismissOffRouteAlert}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: '#dc2626',
+                color: 'white',
+                fontSize: 16, fontWeight: 700,
+                borderRadius: 999,
+                border: 'none', cursor: 'pointer',
+                letterSpacing: '-0.2px',
+                boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
+              }}
+            >
+              Got it
+            </button>
           </div>
         </div>
       )}
@@ -474,15 +773,11 @@ export default function GuidedWalk() {
             }}
           >
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.03)' }} />
-
-            {/* Large emoji centered in top portion */}
             <div style={{
               position: 'absolute', top: 80, left: 0, right: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 80, opacity: 0.35,
             }}>{openPOI.icon}</div>
-
-            {/* X close button */}
             <button
               onClick={() => setOpenPOI(null)}
               style={{
@@ -494,14 +789,11 @@ export default function GuidedWalk() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >✕</button>
-
-            {/* Bottom content over gradient */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
               background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.75) 55%, transparent 100%)',
               padding: '48px 28px 36px',
             }}>
-              {/* Tag */}
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12,
                 background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
@@ -510,14 +802,12 @@ export default function GuidedWalk() {
                 <span style={{ fontSize: 13 }}>{openPOI.icon}</span>
                 <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>{openPOI.name}</span>
               </div>
-
               <h2 style={{ color: 'white', fontSize: 26, fontWeight: 700, margin: '0 0 10px', lineHeight: 1.2 }}>
                 {openPOI.title}
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.65, margin: '0 0 26px' }}>
                 {openPOI.desc}
               </p>
-
               <div style={{ display: 'flex', gap: 10 }}>
                 <button style={{
                   padding: '10px 22px', borderRadius: 99,
@@ -537,7 +827,7 @@ export default function GuidedWalk() {
         </div>
       )}
 
-      {/* Main route complete — prompt to choose a branch */}
+      {/* Main route complete */}
       {done && !branchRoute && (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2000,
@@ -554,7 +844,7 @@ export default function GuidedWalk() {
               width: '100%', padding: '16px',
               background: '#5272FF',
               borderRadius: 16, fontSize: 16, fontWeight: 600,
-              color: 'white', cursor: 'pointer'
+              color: 'white', cursor: 'pointer', border: 'none',
             }}
           >
             Choose a Path →
@@ -562,7 +852,7 @@ export default function GuidedWalk() {
         </div>
       )}
 
-      {/* Branch route complete overlay */}
+      {/* Branch route complete */}
       {done && branchRoute && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 2000,
@@ -572,7 +862,6 @@ export default function GuidedWalk() {
           alignItems: 'center', justifyContent: 'center',
           padding: '0 32px',
         }}>
-          {/* Top label */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'white', border: '1px solid #FFFFFF',
@@ -580,13 +869,9 @@ export default function GuidedWalk() {
           }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#0049C5' }}>DESTINATION REACHED</span>
           </div>
-
-          {/* Main text */}
           <div style={{ fontSize: 28, fontWeight: 800, color: '#0a0a0a', textAlign: 'center', lineHeight: 1.2, marginBottom: 60 }}>
             You've reached<br />your destination!
           </div>
-
-          {/* Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
             <button
               onClick={() => navigate('/map/explore')}
@@ -594,7 +879,7 @@ export default function GuidedWalk() {
                 width: '100%', padding: '17px',
                 background: '#1d4ed8',
                 borderRadius: 999, fontSize: 16, fontWeight: 600,
-                color: 'white', cursor: 'pointer',
+                color: 'white', cursor: 'pointer', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
             >
@@ -606,7 +891,7 @@ export default function GuidedWalk() {
                 width: '100%', padding: '17px',
                 background: '#E7E7F4',
                 borderRadius: 999, fontSize: 16, fontWeight: 600,
-                color: '#111827', cursor: 'pointer',
+                color: '#111827', cursor: 'pointer', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
@@ -615,7 +900,7 @@ export default function GuidedWalk() {
             <button
               onClick={() => navigate('/map/overview')}
               style={{
-                background: 'none', fontSize: 18, color: '#8F8F8F', cursor: 'pointer', marginTop: 4 }}
+                background: 'none', border: 'none', fontSize: 18, color: '#8F8F8F', cursor: 'pointer', marginTop: 4 }}
             >
               Home
             </button>
