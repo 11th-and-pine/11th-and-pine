@@ -13,7 +13,7 @@
 
       "routeId": "main",
       "audioUrl": "/audio/westlake.mp3",
-      "imageUrl": "/images/westlake.jpg",
+      "imageUrl": "src/assets/images/per_westlake.jpg",
 
       "location": [47.6131, -122.3371],
       "stopName": "Westlake Station",
@@ -33,7 +33,7 @@
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-1.mp3",
-      "imageUrl": "/images/perspective-1.jpg",
+      "imageUrl": "src/assets/images/alex.png",
 
       "location": [47.6152, -122.325]
     },
@@ -46,7 +46,7 @@
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-2.mp3",
-      "imageUrl": "/images/perspective-2.jpg",
+      "imageUrl": "src/assets/images/jordan.jpeg",
 
       "location": [47.616, -122.322]
     },
@@ -59,7 +59,7 @@
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-3.mp3",
-      "imageUrl": "/images/perspective-3.jpg",
+      "imageUrl": "src/assets/images/sam.webp",
 
       "location": [47.614, -122.329]
     }
