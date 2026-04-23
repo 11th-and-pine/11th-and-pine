@@ -66,5 +66,41 @@ html, body {
   0%, 100% { transform: translateY(0);    }
   50%       { transform: translateY(-8px); }
 }
+@keyframes dropBounce {
+  0% {
+    transform: translateY(-150px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(20px);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-10px);
+  }
+  90% {
+    transform: translateY(5px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
+@keyframes introSpin {
+  0% {
+    transform: rotate(-360deg) scale(0.96);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
 
+.animate-drop-bounce {
+  animation: dropBounce 0.8s ease-out forwards;
+}
+
+.animate-intro-spin {
+  animation: introSpin 0.9s ease-out forwards;
+  transform-origin: center;
+}

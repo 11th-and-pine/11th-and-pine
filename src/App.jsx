@@ -1,4 +1,5 @@
 import { Navigate, Routes, Route } from 'react-router-dom'
+import Intro from './pages/Onboarding/Intro'
 import Onboarding1 from './pages/Onboarding/Onboarding1'
 import Onboarding2 from './pages/Onboarding/Onboarding2'
 import Onboarding3 from './pages/Onboarding/Onboarding3'
@@ -14,7 +15,8 @@ function App() {
   return (
     <div className="phone-shell">
       <Routes>
-        <Route path="/" element={<Navigate to="/onboarding/1" replace />} />
+        <Route path="/" element={<Navigate to="/onboarding/intro" replace />} />
+        <Route path="/onboarding/intro" element={<Intro />} />
         <Route path="/onboarding/1" element={<Onboarding1 />} />
         <Route path="/onboarding/2" element={<Onboarding2 />} />
         <Route path="/onboarding/3" element={<Onboarding3 />} />

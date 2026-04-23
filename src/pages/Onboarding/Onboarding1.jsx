@@ -68,15 +68,13 @@ function Onboarding1() {
             className="font-semibold text-black leading-[1.05] mb-[clamp(7px,1.5vh,18px)] pl-2"
             style={{ fontSize: 'clamp(26px, 6.5vw, 38px)' }}
           >
-            Immersive
-            <br />
-            Experience
+            11th & Pine
           </h1>
           <p
             className="text-[#4b5563] mb-[clamp(10px,2.5vh,24px)]"
             style={{ fontSize: 'clamp(13px, 3.8vw, 16px)', lineHeight: '1.6' }}
           >
-            Wear headphones for the best experience. Stay aware of your surroundings.
+            A location-based audio experience exploring the stories of CHOP in Capitol Hill.
           </p>
 
           <div className="flex justify-start gap-2">

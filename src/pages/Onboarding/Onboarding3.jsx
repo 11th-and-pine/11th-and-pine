@@ -68,14 +68,16 @@ function Onboarding3() {
             className="font-semibold text-black leading-[1.05] mb-[clamp(7px,1.5vh,18px)] text-right"
             style={{ fontSize: 'clamp(26px, 6.5vw, 38px)' }}
           >
-            Stories
+            Immersive 
+            <br />
+            Experience
           </h1>
 
           <p
             className="text-[#4b5563] mb-[clamp(10px,2.5vh,24px)] text-right"
             style={{ fontSize: 'clamp(13px, 3.8vw, 16px)', lineHeight: '1.6' }}
           >
-            Listen to voices and perspectives that help you revisit what unfolded here.
+            Follow the route. Stories play as you move. Wear headphones and stay aware of your surroundings.
           </p>
 
           <div className="flex justify-center gap-2">
