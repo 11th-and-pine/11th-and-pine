@@ -886,7 +886,7 @@ export default function GuidedWalk() {
               New Route <span style={{ fontSize: 18 }}>➤</span>
             </button>
             <button
-              onClick={() => navigate('/perspectives')}
+              onClick={() => navigate('/perspectives/1')}
               style={{
                 width: '100%', padding: '17px',
                 background: '#E7E7F4',
