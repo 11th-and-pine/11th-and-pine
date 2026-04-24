@@ -62,6 +62,13 @@ function PerspectiveDetail() {
 
   return (
     <div style={styles.page}>
+      {/* Floating back button — lives outside the scroll area so it stays pinned while content scrolls */}
+      <button style={styles.backCircle} onClick={() => navigate('/perspectives')} aria-label="Back">
+        <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+          <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
       <div style={styles.scrollArea}>
         <div style={styles.hero}>
           <img
@@ -72,12 +79,6 @@ function PerspectiveDetail() {
             alt={perspective.name}
             style={styles.heroImage}
           />
-
-          <button style={styles.backCircle} onClick={() => navigate('/perspectives')} aria-label="Back">
-            <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
 
           <div style={styles.mapPreviewCard}>
             <div style={styles.mapPreviewInner}>
@@ -185,6 +186,7 @@ function PerspectiveDetail() {
 
 const styles = {
   page: {
+    position: 'relative',
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
@@ -226,7 +228,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 3,
+    zIndex: 50,
   },
   mapPreviewCard: {
     position: 'absolute',
