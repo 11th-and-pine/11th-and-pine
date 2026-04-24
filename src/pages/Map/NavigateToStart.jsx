@@ -123,14 +123,17 @@ export default function NavigateToStart() {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000,
         padding: '18px 16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between'
       }}>
-        <button onClick={() => navigate(-1)} style={{
-          background: 'rgba(0,0,0,0.45)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255,255,255,0.18)',
-          color: 'white',
-          padding: '8px 14px', borderRadius: 20, fontSize: 14, cursor: 'pointer'
-        }}>← Back</button>
+        <button onClick={() => navigate(-1)} aria-label="Back" style={{
+          width: 39, height: 39, borderRadius: '50%', flexShrink: 0,
+          background: '#ffffff',
+          boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
+          border: 'none', cursor: 'pointer', padding: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
 
         <div style={{
           background: 'rgba(0,0,0,0.45)',

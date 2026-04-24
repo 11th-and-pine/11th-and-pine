@@ -19,8 +19,10 @@ function PerspectivesList() {
   return (
     <div style={styles.page}>
       <div style={styles.topBar}>
-        <button style={styles.backButton} onClick={() => navigate('/complete')}>
-          ←
+        <button style={styles.backButton} onClick={() => navigate('/map/overview')} aria-label="Back">
+          <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
         <h1 style={styles.topBarTitle}>PERSPECTIVES</h1>
         <div style={styles.topBarSpacer} />
@@ -130,14 +132,15 @@ const styles = {
     flexShrink: 0,
   },
   backButton: {
-    width: '40px',
-    height: '40px',
+    width: '39px',
+    height: '39px',
     border: 'none',
-    background: 'transparent',
-    fontSize: '28px',
-    lineHeight: 1,
+    borderRadius: '50%',
+    background: '#ffffff',
+    boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
+    padding: 0,
     cursor: 'pointer',
-    color: '#111827',
+    flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -168,7 +171,7 @@ const styles = {
     marginBottom: '18px',
   },
   heroTitle: {
-    fontSize: '52px',
+    fontSize: 'clamp(40px, 13vw, 52px)',
     lineHeight: 0.95,
     fontWeight: '800',
     color: '#2f3431',

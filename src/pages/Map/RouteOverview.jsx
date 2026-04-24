@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Map, { Source, Layer, Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import PinIcon from '../../components/PinIcon'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 
@@ -62,28 +63,63 @@ const EXPLORE_ROUTES = [
 ]
 
 const POIS = [
-  {id: 1, position: [47.6120, -122.3358], icon: '📍', name: 'Pin 1', title: 'Title 1', desc: 'Description 1'},
-  {id: 2, position: [47.6136, -122.3318], icon: '📍', name: 'Pin 2', title: 'Title 2', desc: 'Description 2'},
-  {id: 3, position: [47.6153, -122.3240], icon: '📍', name: 'Pin 3', title: 'Title 3', desc: 'Description 3'}
+  {
+    id: 1,
+    position: [47.6120, -122.3358],
+    name: 'Westlake Plaza',
+    title: 'Where the March Began',
+    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.'
+  },
+  {
+    id: 2,
+    position: [47.6136, -122.3318],
+    name: 'Pike/Pine Corridor',
+    title: 'From Auto Row to Activism',
+    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.'
+  },
+  {
+    id: 3,
+    position: [47.6153, -122.3240],
+    name: 'Cal Anderson Park',
+    title: 'The Autonomous Zone',
+    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.'
+  }
 ]
 
 const TAGS = ['Uprising', 'Movement', 'Resistance']
 
 const toLngLat = ([lat, lng]) => [lng, lat]
 
-// Snap positions as fraction of container height (sheet top)
-const SheetOrigin = 0.60
-const SheetCollapsed = 0.90
+// Height of the "peek" area visible when the sheet is collapsed (drag handle + title)
+const COLLAPSED_PEEK = 88
 
 export default function RouteOverview() {
   const navigate = useNavigate()
   const mapRef = useRef()
   const containerRef = useRef()
+  const sheetRef = useRef()
 
-  const [sheetFraction, setSheetFraction] = useState(SheetOrigin)
+  // collapsed = true means sheet is pushed down showing only the peek area
+  const [collapsed, setCollapsed] = useState(false)
+  const [dragOffset, setDragOffset] = useState(0)   // live drag delta in px
+  const [sheetHeight, setSheetHeight] = useState(0)
   const [openPOI, setOpenPOI] = useState(null)
-  const sheetFractionRef = useRef(SheetOrigin)
-  const drag = useRef({ active: false, startY: 0, startFraction: SheetOrigin})
+  const drag = useRef({ active: false, startY: 0, startCollapsed: false })
+
+  // Measure sheet height (updates on content changes / window resize / orientation change)
+  useLayoutEffect(() => {
+    if (!sheetRef.current) return
+    const node = sheetRef.current
+    const update = () => setSheetHeight(node.offsetHeight)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(node)
+    window.addEventListener('resize', update)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', update)
+    }
+  }, [])
 
   const handleMapLoad = () => {
     const allPoints = [...MAIN_ROUTE, ...EXPLORE_ROUTES.flatMap(r => r.path)]
@@ -97,32 +133,32 @@ export default function RouteOverview() {
     }
   }
 
+  // Sheet sizes itself to content; we translateY to collapse/expand
+  const collapsedTranslate = Math.max(0, sheetHeight - COLLAPSED_PEEK)
+  const baseTranslate = collapsed ? collapsedTranslate : 0
+  const translateY = Math.min(
+    collapsedTranslate,
+    Math.max(0, baseTranslate + dragOffset)
+  )
+
   const onPointerDown = (e) => {
-    drag.current = { active: true, startY: e.clientY, startFraction: sheetFraction }
+    drag.current = { active: true, startY: e.clientY, startCollapsed: collapsed }
+    setDragOffset(0)
     e.currentTarget.setPointerCapture(e.pointerId)
   }
 
   const onPointerMove = (e) => {
     if (!drag.current.active) return
-    let h = 800
-    if (containerRef.current) {
-      h = containerRef.current.offsetHeight
-    }
-    const delta = (e.clientY - drag.current.startY) / h
-    const newFraction = Math.min(
-      SheetCollapsed,
-      Math.max(0.18, drag.current.startFraction + delta)
-    )
-    setSheetFraction(newFraction)
-    sheetFractionRef.current = newFraction
+    setDragOffset(e.clientY - drag.current.startY)
   }
 
   const onPointerUp = () => {
     if (!drag.current.active) return
     drag.current.active = false
-    const mid = (SheetOrigin + SheetCollapsed) / 2
-    const current = sheetFractionRef.current
-    setSheetFraction(current < mid ? SheetOrigin : SheetCollapsed)
+    const finalTranslate = (drag.current.startCollapsed ? collapsedTranslate : 0) + dragOffset
+    // Snap to nearest state based on midpoint
+    setCollapsed(finalTranslate > collapsedTranslate / 2)
+    setDragOffset(0)
   }
 
   const isAnimating = !drag.current.active
@@ -173,9 +209,9 @@ export default function RouteOverview() {
 
         {/* POI markers */}
         {POIS.map(poi => (
-          <Marker key={poi.id} longitude={poi.position[1]} latitude={poi.position[0]} anchor="center">
-            <div onClick={() => setOpenPOI(poi)} style={{ fontSize: 28, cursor: 'pointer', lineHeight: 1 }}>
-              {poi.icon}
+          <Marker key={poi.id} longitude={poi.position[1]} latitude={poi.position[0]} anchor="bottom">
+            <div onClick={() => setOpenPOI(poi)} style={{ cursor: 'pointer', lineHeight: 0 }}>
+              <PinIcon size={24} />
             </div>
           </Marker>
         ))}
@@ -209,7 +245,8 @@ export default function RouteOverview() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              width: 346, height: 538,
+              width: 'min(346px, 88vw)',
+              height: 'min(538px, 75vh)',
               borderRadius: 40, overflow: 'hidden',
               position: 'relative', flexShrink: 0,
               background: 'linear-gradient(160deg, #3d3d3d 0%, #1a1a1a 100%)',
@@ -219,8 +256,8 @@ export default function RouteOverview() {
             <div style={{
               position: 'absolute', top: 80, left: 0, right: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 80, opacity: 0.35,
-            }}>{openPOI.icon}</div>
+              opacity: 0.35,
+            }}><PinIcon size={72} /></div>
 
             <button
               onClick={() => setOpenPOI(null)}
@@ -244,7 +281,7 @@ export default function RouteOverview() {
                 background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
                 padding: '4px 12px', borderRadius: 99,
               }}>
-                <span style={{ fontSize: 13 }}>{openPOI.icon}</span>
+                <PinIcon size={14} shadow={false} />
                 <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>{openPOI.name}</span>
               </div>
 
@@ -274,17 +311,18 @@ export default function RouteOverview() {
         </div>
       )}
 
-      {/* ── Draggable bottom sheet ── */}
-      <div style={{
+      {/* ── Draggable bottom sheet (auto-sized to content) ── */}
+      <div ref={sheetRef} style={{
         position: 'absolute',
-        top: `${sheetFraction * 100}%`,
         left: 0, right: 0, bottom: 0,
+        transform: `translateY(${translateY}px)`,
         background: 'white',
         borderRadius: '22px 22px 0 0',
         boxShadow: '0 -6px 32px rgba(0,0,0,0.13)',
-        transition: isAnimating ? 'top 0.3s cubic-bezier(0.32,0.72,0,1)' : 'none',
+        transition: isAnimating ? 'transform 0.3s cubic-bezier(0.32,0.72,0,1)' : 'none',
         zIndex: 10,
-        display: 'flex', flexDirection: 'column'
+        display: 'flex', flexDirection: 'column',
+        maxHeight: '80dvh',
       }}>
         {/* Drag handle */}
         <div
@@ -298,7 +336,7 @@ export default function RouteOverview() {
         </div>
 
         {/* Content */}
-        <div style={{ padding: '8px 24px 36px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: '8px 24px max(24px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
           <div style={{ fontSize: 28, fontWeight: 800, color: '#0a0a0a', marginBottom: 16, 
             letterSpacing: '-0.5px', textAlign: 'center'
           }}>

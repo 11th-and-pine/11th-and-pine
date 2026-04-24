@@ -89,8 +89,8 @@ const ROUTES = [
 
 export default function ExploreRoutes() {
   const navigate = useNavigate()
-  const [selectedId, setSelectedId] = useState(null)
   const mapRef = useRef()
+  const [selectedId, setSelectedId] = useState(null)
 
   const activeRoute = ROUTES.find(r => r.id === selectedId) || null
 
@@ -195,14 +195,14 @@ export default function ExploreRoutes() {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000,
         padding: '18px 16px 16px',
       }}>
-        <button onClick={() => navigate(-1)} style={{
-            width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
-            background: 'white', boxShadow: '0 0 0 6px rgba(0,0,0,0.06)',
-            border: 'none', cursor: 'pointer',
+        <button onClick={() => navigate(-1)} aria-label="Back" style={{
+            width: 39, height: 39, borderRadius: '50%', flexShrink: 0,
+            background: '#ffffff', boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
+            border: 'none', cursor: 'pointer', padding: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
         </button>
       </div>

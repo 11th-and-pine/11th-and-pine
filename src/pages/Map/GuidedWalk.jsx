@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Map, { Source, Layer, Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import PinIcon from '../../components/PinIcon'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 
@@ -65,28 +66,25 @@ const POIS = [
     id: 1,
     position: [47.6120, -122.3358],
     triggerStep: 1,
-    icon: '📍',
-    name: 'Pin1',
-    title: 'Title1',
-    desc: 'Description1'
+    name: 'Westlake Plaza',
+    title: 'Where the March Began',
+    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.'
   },
   {
     id: 2,
     position: [47.6136, -122.3318],
     triggerStep: 3,
-    icon: '📍',
-    name: 'Pin2',
-    title: 'Title2',
-    desc: 'Description2'
+    name: 'Pike/Pine Corridor',
+    title: 'From Auto Row to Activism',
+    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.'
   },
   {
     id: 3,
     position: [47.6153, -122.3240],
     triggerStep: 6,
-    icon: '📍',
-    name: 'Pin3',
-    title: 'Title3',
-    desc: 'Description3'
+    name: 'Cal Anderson Park',
+    title: 'The Autonomous Zone',
+    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.'
   },
 ]
 
@@ -180,8 +178,6 @@ export default function GuidedWalk() {
   const [step, setStep] = useState(0)
   const [simulating, setSimulating] = useState(false)
   const [done, setDone] = useState(false)
-  const [triggeredPOIs, setTriggeredPOIs] = useState(new Set())
-  const [pendingPOI, setPendingPOI] = useState(null)
   const [openPOI, setOpenPOI] = useState(null)
 
   // Wrong path simulation state
@@ -337,8 +333,6 @@ export default function GuidedWalk() {
     setStep(0)
     setSimulating(false)
     setDone(false)
-    setTriggeredPOIs(new Set())
-    setPendingPOI(null)
     setWrongPathMode(false)
     setOffRouteAlert(false)
     setAlertDismissed(false)
@@ -347,18 +341,6 @@ export default function GuidedWalk() {
     clearInterval(wrongSimTimer.current)
     simTimer.current = null
   }, [route])
-
-  // POI proximity
-  useEffect(() => {
-    POIS.forEach(poi => {
-      if (step >= poi.triggerStep && !triggeredPOIs.has(poi.id)) {
-        setTriggeredPOIs(prev => new Set([...prev, poi.id]))
-        setPendingPOI(poi)
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200])
-        setTimeout(() => setPendingPOI(p => (p?.id === poi.id ? null : p)), 6000)
-      }
-    })
-  }, [step, triggeredPOIs])
 
   return (
     <div style={{ height: '100%', width: '100%', position: 'relative', overflow: 'hidden' }}>
@@ -432,11 +414,11 @@ export default function GuidedWalk() {
 
         {/* POI markers */}
         {POIS.map(poi => (
-          <Marker key={poi.id} longitude={poi.position[1]} latitude={poi.position[0]} anchor="center">
+          <Marker key={poi.id} longitude={poi.position[1]} latitude={poi.position[0]} anchor="bottom">
             <div
               onClick={() => setOpenPOI(poi)}
-              style={{ fontSize: 28, cursor: 'pointer', lineHeight: 1 }}
-            >{poi.icon}</div>
+              style={{ cursor: 'pointer', lineHeight: 0 }}
+            ><PinIcon size={24} /></div>
           </Marker>
         ))}
 
@@ -470,24 +452,24 @@ export default function GuidedWalk() {
         padding: '52px 16px 16px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={() => navigate(-1)} style={{
-            width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-            background: 'white', boxShadow: '0 0 0 6px rgba(0,0,0,0.06)',
-            border: 'none', cursor: 'pointer',
+          <button onClick={() => navigate(-1)} aria-label="Back" style={{
+            width: 39, height: 39, borderRadius: '50%', flexShrink: 0,
+            background: '#ffffff', boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
+            border: 'none', cursor: 'pointer', padding: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button onClick={() => navigate('/map/explore')} style={{
-            width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-            background: 'white', boxShadow: '0 0 0 6px rgba(0,0,0,0.06)',
-            border: 'none', cursor: 'pointer',
+          <button onClick={() => navigate('/map/explore')} aria-label="Next" style={{
+            width: 39, height: 39, borderRadius: '50%', flexShrink: 0,
+            background: '#ffffff', boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
+            border: 'none', cursor: 'pointer', padding: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M6 3L11 8L6 13" stroke="#111827" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M6 3L11 8L6 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
 
@@ -520,51 +502,16 @@ export default function GuidedWalk() {
         </div>
       </div>
 
-      {/* POI notification banner */}
-      {pendingPOI && !done && (
-        <div style={{
-          position: 'absolute', top: 108, left: 16, right: 16, zIndex: 1001,
-          background: 'rgba(219,234,254,0.95)', backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          border: '1px solid rgba(147,197,253,0.5)',
-          borderRadius: 18, padding: '12px 14px',
-          display: 'flex', alignItems: 'center', gap: 12,
-          boxShadow: '0 4px 24px rgba(59,130,246,0.12)',
-          animation: 'slideDown 0.3s ease',
-        }}>
-          <div style={{
-            width: 42, height: 42, flexShrink: 0,
-            background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(147,197,253,0.4)',
-            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-          }}>{pendingPOI.icon}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#3b82f6', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em' }}>📳 NEARBY</div>
-            <div style={{ color: '#111827', fontSize: 13, fontWeight: 600 }}>{pendingPOI.name}</div>
-          </div>
-          <div style={{ display: 'flex', gap: 7 }}>
-            <button
-              onClick={() => { setOpenPOI(pendingPOI); setPendingPOI(null) }}
-              style={{
-                background: 'white', color: '#111827', border: 'none',
-                padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              }}
-            >View</button>
-            <button
-              onClick={() => setPendingPOI(null)}
-              style={{
-                background: 'rgba(0,0,0,0.08)', color: '#374151', border: 'none',
-                width: 30, height: 30, borderRadius: '50%', fontSize: 14, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >✕</button>
-          </div>
-        </div>
-      )}
-
       {/* Simulate button */}
       {!done && !wrongPathMode && (
         <div style={{ position: 'absolute', right: 14, bottom: 200, zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <button onClick={() => setSimulating(v => !v)} style={{
+          <button onClick={() => {
+            setSimulating(v => {
+              const next = !v
+              setAudioPlaying(next)
+              return next
+            })
+          }} style={{
             width: 50, height: 50, borderRadius: '50%',
             background: '#7D92A7',
             backdropFilter: 'blur(8px)', color: 'white', fontSize: 18, cursor: 'pointer',
@@ -616,25 +563,24 @@ export default function GuidedWalk() {
         <div style={{
           position: 'absolute', bottom: 24, left: 16, right: 16, zIndex: 1000,
           background: 'white', borderRadius: 32,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
-          padding: '10px 16px'
+          boxShadow: '0 12px 48px rgba(0, 73, 197, 0.1)',
+          padding: '6px 16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <button
               onClick={() => setAudioPlaying(v => !v)}
               style={{
-                width: 56, height: 56, borderRadius: '50%',
+                width: 48, height: 48, borderRadius: '50%',
                 background: '#1d4ed8', color: 'white',
                 fontSize: 20, cursor: 'pointer', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
             >
               {audioPlaying ? '⏸' : '▶'}
             </button>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Title</div>
-              <div style={{ fontSize: 13, color: routeColor, marginBottom: 10 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Title</div>
+              <div style={{ fontSize: 12, color: routeColor, marginBottom: 10 }}>
                 {branchRoute ? branchRoute.title : 'Main Route'}
               </div>
               <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
@@ -678,7 +624,7 @@ export default function GuidedWalk() {
           {/* Card */}
           <div style={{
             position: 'relative', zIndex: 1,
-            width: '100%', maxWidth: 340,
+            width: 'min(340px, 86vw)',
             background: 'rgba(255,255,255,0.96)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
@@ -766,7 +712,8 @@ export default function GuidedWalk() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              width: 346, height: 538,
+              width: 'min(346px, 88vw)',
+              height: 'min(538px, 75vh)',
               borderRadius: 40, overflow: 'hidden',
               position: 'relative', flexShrink: 0,
               background: 'linear-gradient(160deg, #3d3d3d 0%, #1a1a1a 100%)',
@@ -776,8 +723,8 @@ export default function GuidedWalk() {
             <div style={{
               position: 'absolute', top: 80, left: 0, right: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 80, opacity: 0.35,
-            }}>{openPOI.icon}</div>
+              opacity: 0.35,
+            }}><PinIcon size={72} /></div>
             <button
               onClick={() => setOpenPOI(null)}
               style={{
@@ -799,7 +746,7 @@ export default function GuidedWalk() {
                 background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
                 padding: '4px 12px', borderRadius: 99,
               }}>
-                <span style={{ fontSize: 13 }}>{openPOI.icon}</span>
+                <PinIcon size={14} shadow={false} />
                 <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>{openPOI.name}</span>
               </div>
               <h2 style={{ color: 'white', fontSize: 26, fontWeight: 700, margin: '0 0 10px', lineHeight: 1.2 }}>
@@ -858,52 +805,106 @@ export default function GuidedWalk() {
           position: 'absolute', inset: 0, zIndex: 2000,
           background: 'rgba(255,255,255,0.10)',
           backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          padding: '0 32px',
         }}>
+          {/* Top "Arrived" bar */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'white', border: '1px solid #FFFFFF',
-            borderRadius: 999, padding: '6px 14px', marginBottom: 28,
+            flexShrink: 0,
+            width: '100%',
+            minHeight: 64,
+            padding: '20px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            borderBottom: '1px solid rgba(0,0,0,0.08)',
+            fontSize: 16, fontWeight: 700,
+            color: '#0049C5',
+            letterSpacing: '-0.2px',
           }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#0049C5' }}>DESTINATION REACHED</span>
+            Arrived
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#0a0a0a', textAlign: 'center', lineHeight: 1.2, marginBottom: 60 }}>
-            You've reached<br />your destination!
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
-            <button
-              onClick={() => navigate('/map/explore')}
-              style={{
-                width: '100%', padding: '17px',
-                background: '#1d4ed8',
-                borderRadius: 999, fontSize: 16, fontWeight: 600,
-                color: 'white', cursor: 'pointer', border: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              }}
-            >
-              New Route <span style={{ fontSize: 18 }}>➤</span>
-            </button>
-            <button
-              onClick={() => navigate('/perspectives/1')}
-              style={{
-                width: '100%', padding: '17px',
-                background: '#E7E7F4',
-                borderRadius: 999, fontSize: 16, fontWeight: 600,
-                color: '#111827', cursor: 'pointer', border: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-            >
-              Digital Archive <span style={{fontSize: 18}}>📖</span>
-            </button>
-            <button
-              onClick={() => navigate('/map/overview')}
-              style={{
-                background: 'none', border: 'none', fontSize: 18, color: '#8F8F8F', cursor: 'pointer', marginTop: 4 }}
-            >
-              Home
-            </button>
+
+          {/* Centered content */}
+          <div style={{
+            flex: 1,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '0 32px',
+          }}>
+            {/* DESTINATION REACHED pill with checkmark */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'white',
+              borderRadius: 999, padding: '7px 16px 7px 10px',
+              marginBottom: 20,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            }}>
+              {/* blue check circle */}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="8" fill="#0049C5" />
+                <path d="M4.5 8.2 L7 10.7 L11.5 5.8" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#0049C5' }}>
+                JOURNEY COMPLETE
+              </span>
+            </div>
+
+            <div style={{
+              fontSize: 'clamp(26px, 7vw, 32px)',
+              fontWeight: 800, color: '#0a0a0a',
+              textAlign: 'center', lineHeight: 1.15,
+              letterSpacing: '-0.8px',
+              marginBottom: 48,
+            }}>
+              You&rsquo;ve completed<br />this perspective
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', alignItems: 'center' }}>
+              <button
+                onClick={() => navigate('/map/explore')}
+                style={{
+                  width: '100%', padding: '16px',
+                  background: '#1d4ed8',
+                  borderRadius: 999, fontSize: 16, fontWeight: 600,
+                  color: 'white', cursor: 'pointer', border: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  boxShadow: '0 6px 16px rgba(29,78,216,0.25)',
+                }}
+              >
+                New Route
+                {/* paper-plane / navigate icon */}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M21 3 L3 10.5 L10.5 13.5 L13.5 21 L21 3 Z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+                </svg>
+              </button>
+              <button
+                onClick={() => navigate('/perspectives/1')}
+                style={{
+                  width: '100%', padding: '16px',
+                  background: '#E7E7F4',
+                  borderRadius: 999, fontSize: 16, fontWeight: 600,
+                  color: '#111827', cursor: 'pointer', border: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                Digital Archive <span style={{ fontSize: 18 }}>📖</span>
+              </button>
+              <button
+                onClick={() => navigate('/map/overview')}
+                style={{
+                  background: 'none', border: 'none',
+                  fontSize: 14, color: '#8F8F8F',
+                  cursor: 'pointer', marginTop: 6,
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '3px',
+                  padding: '4px 12px',
+                }}
+              >
+                Home
+              </button>
+            </div>
           </div>
         </div>
       )}

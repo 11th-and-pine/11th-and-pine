@@ -1,3 +1,4 @@
+import { React } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Map, { Marker, Source, Layer } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -40,8 +41,10 @@ function PerspectiveDetail() {
     return (
       <div style={styles.page}>
         <div style={styles.notFoundWrap}>
-          <button style={styles.backCircleFallback} onClick={() => navigate('/perspectives')}>
-            ←
+          <button style={styles.backCircleFallback} onClick={() => navigate('/perspectives')} aria-label="Back">
+            <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
           <h1 style={styles.notFoundTitle}>Perspective not found</h1>
         </div>
@@ -70,13 +73,16 @@ function PerspectiveDetail() {
             style={styles.heroImage}
           />
 
-          <button style={styles.backCircle} onClick={() => navigate('/perspectives')}>
-            ←
+          <button style={styles.backCircle} onClick={() => navigate('/perspectives')} aria-label="Back">
+            <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
 
           <div style={styles.mapPreviewCard}>
             <div style={styles.mapPreviewInner}>
               <Map
+                key="thumb-map"
                 mapboxAccessToken={MAPBOX_TOKEN}
                 initialViewState={{
                   longitude: mapCenter.longitude,
@@ -91,6 +97,7 @@ function PerspectiveDetail() {
                 doubleClickZoom={false}
                 touchZoomRotate={false}
                 keyboard={false}
+                interactive={false}
               >
                 <Source id="route" type="geojson" data={routeGeoJSON}>
                   <Layer {...routeLayer} />
@@ -192,7 +199,8 @@ const styles = {
   hero: {
     position: 'relative',
     width: '100%',
-    height: '540px',
+    height: 'min(540px, 62vh)',
+    minHeight: '380px',
     overflow: 'hidden',
     borderBottomLeftRadius: '36px',
     borderBottomRightRadius: '36px',
@@ -207,18 +215,17 @@ const styles = {
     position: 'absolute',
     top: '20px',
     left: '20px',
-    width: '56px',
-    height: '56px',
+    width: '39px',
+    height: '39px',
     borderRadius: '50%',
     border: 'none',
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-    fontSize: '30px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
+    padding: 0,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#111',
     zIndex: 3,
   },
   mapPreviewCard: {
@@ -256,15 +263,17 @@ const styles = {
     left: '20px',
     bottom: '34px',
     right: '150px',
+    maxWidth: 'calc(100% - 170px)',
     zIndex: 2,
   },
   heroTitle: {
     margin: 0,
     color: '#fff',
-    fontSize: '42px',
+    fontSize: 'clamp(32px, 10vw, 42px)',
     lineHeight: 1.02,
     fontWeight: '800',
     letterSpacing: '-1px',
+    wordBreak: 'break-word',
   },
   content: {
     padding: '22px 20px 28px',
@@ -312,13 +321,13 @@ const styles = {
   },
   descriptionText: {
     margin: 0,
-    fontSize: '18px',
+    fontSize: '16px',
     lineHeight: 1.28,
     color: '#111',
   },
   audioBar: {
-    height: '112px',
-    minHeight: '112px',
+    height: '80px',
+    minHeight: '80px',
     backgroundColor: '#f8f8f8',
     borderTop: '1px solid #d9d9d9',
     padding: '14px 20px 18px',
@@ -334,19 +343,19 @@ const styles = {
   },
   audioLabel: {
     margin: 0,
-    fontSize: '14px',
+    fontSize: '13px',
     color: '#a1a1a1',
   },
   audioTime: {
     margin: '8px 0 0 0',
-    fontSize: '28px',
+    fontSize: '24px',
     lineHeight: 1,
     fontWeight: '800',
     color: '#000',
   },
   playButton: {
-    width: '72px',
-    height: '72px',
+    width: '49px',
+    height: '49px',
     borderRadius: '50%',
     border: 'none',
     backgroundColor: '#1560f2',
@@ -363,13 +372,17 @@ const styles = {
     padding: '24px',
   },
   backCircleFallback: {
-    width: '56px',
-    height: '56px',
+    width: '39px',
+    height: '39px',
     borderRadius: '50%',
     border: 'none',
-    backgroundColor: '#fff',
-    fontSize: '30px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
+    padding: 0,
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: '20px',
   },
   notFoundTitle: {
