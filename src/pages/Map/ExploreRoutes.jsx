@@ -10,6 +10,7 @@ const toLngLat = ([lat, lng]) => [lng, lat]
 const ROUTES = [
   {
     id: 1,
+    perspectiveId: '2', // Alex — see src/mock/perspectives.json
     title: "Alex's Route",
     role: 'Community Organizer',
     desc: 'Follow the path of the first organizers on the ground.',
@@ -26,6 +27,7 @@ const ROUTES = [
   },
   {
     id: 2,
+    perspectiveId: '3', // Jordan
     title: "Jordan's Route",
     role: 'Local Resident',
     desc: 'See the neighborhood through the eyes of someone who lived it.',
@@ -43,6 +45,7 @@ const ROUTES = [
   },
   {
     id: 3,
+    perspectiveId: '4', // Sam
     title: "Sam's Route",
     role: 'Street Medic',
     desc: 'From the park entrance past Oddfellows, down to the East Precinct and Broadway.',
@@ -57,6 +60,7 @@ const ROUTES = [
   },
   {
     id: 4,
+    // No dedicated perspective for this route yet — will fall back to Westlake in the archive.
     title: 'Neighborhood Loop',
     role: 'Local Witness',
     desc: 'Circle the park exterior via Victrola, a residential block, and Rhein Haus.',
@@ -92,7 +96,7 @@ const ROUTES = [
 // Two snap positions: peek (handle + title only) and full (handle + title + cards + button).
 function computeSnaps(vh) {
   const peek = 96                                                     // just handle + title peek
-  const full = Math.round(Math.min(Math.max(vh * 0.40, 320), 360))    // tight: handle + title + cards + button
+  const full = Math.round(Math.min(Math.max(vh * 0.42, 336), 380))    // tight: handle + title + cards + button
   return { peek, full }
 }
 
@@ -396,7 +400,7 @@ export default function ExploreRoutes() {
 
         {/* Start button pinned to bottom of sheet (hidden at peek) */}
         <div style={{
-          padding: '12px 20px calc(16px + env(safe-area-inset-bottom, 0px))',
+          padding: '12px 20px calc(32px + env(safe-area-inset-bottom, 0px))',
           flexShrink: 0,
           background: 'white',
           opacity: sheetH > snaps.peek + 20 ? 1 : 0,

@@ -581,7 +581,7 @@ export default function GuidedWalk() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 2 }}>Title</div>
               <div style={{ fontSize: 12, color: routeColor, marginBottom: 10 }}>
-                {branchRoute ? branchRoute.title : 'Main Route'}
+                {branchRoute ? branchRoute.title : 'Westlake Route'}
               </div>
               <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
                 <div style={{
@@ -783,7 +783,7 @@ export default function GuidedWalk() {
           padding: '20px 24px 44px',
         }}>
           <div style={{ width: 40, height: 4, background: '#d1d5db', borderRadius: 2, margin: '0 auto 20px' }} />
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Main route complete!</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Westlake route complete!</div>
           <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Now choose a perspective to explore.</div>
           <button
             onClick={() => navigate('/map/explore')}
@@ -794,7 +794,7 @@ export default function GuidedWalk() {
               color: 'white', cursor: 'pointer', border: 'none',
             }}
           >
-            Choose a Path →
+            Choose a CHOP Route →
           </button>
         </div>
       )}
@@ -880,7 +880,7 @@ export default function GuidedWalk() {
                 </svg>
               </button>
               <button
-                onClick={() => navigate('/perspectives/1')}
+                onClick={() => navigate(`/perspectives/${(branchRoute && branchRoute.perspectiveId) || '1'}`)}
                 style={{
                   width: '100%', padding: '16px',
                   background: '#E7E7F4',
