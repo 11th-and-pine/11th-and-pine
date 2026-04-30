@@ -21,7 +21,7 @@ function Onboarding3() {
 
   return (
     <div
-      className="h-full bg-[#f3f3f3] flex flex-col [font-family:Roboto,-apple-system,BlinkMacSystemFont,'Helvetica_Neue',sans-serif] overflow-hidden"
+      className="onboarding-page"
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0].clientX
       }}
@@ -32,7 +32,7 @@ function Onboarding3() {
         handleSwipe(diff)
       }}
     >
-      <div className="flex-none h-[57%]">
+      <div className="onboarding-hero">
         <svg className="absolute size-0" aria-hidden="true" focusable="false">
           <defs>
             <clipPath id="onboarding-hero-curve" clipPathUnits="objectBoundingBox">
@@ -59,14 +59,12 @@ function Onboarding3() {
       </div>
 
       <div
-        className={`flex-1 min-h-0 flex flex-col justify-between transition-all duration-500 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+        className={`onboarding-content onboarding-content-right transition-all duration-500 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
           }`}
-        style={{ paddingLeft: '36px', paddingRight: '28px', paddingTop: 'clamp(12px, 3vh, 28px)', paddingBottom: 'clamp(2px, 1vh, 8px)' }}
       >
-        <div className="flex flex-col gap-8">
+        <div className="onboarding-copy">
           <h1
-            className="font-semibold text-black leading-[1.05] mb-[clamp(7px,1.5vh,18px)] text-right"
-            style={{ fontSize: 'clamp(26px, 6.5vw, 38px)' }}
+            className="onboarding-title"
           >
             Immersive 
             <br />
@@ -74,8 +72,7 @@ function Onboarding3() {
           </h1>
 
           <p
-            className="text-[#4b5563] mb-[clamp(10px,2.5vh,24px)] text-right"
-            style={{ fontSize: 'clamp(13px, 3.8vw, 16px)', lineHeight: '1.6' }}
+            className="onboarding-body"
           >
             Follow the route. Stories play as you move. Wear headphones and stay aware of your surroundings.
           </p>
@@ -87,21 +84,17 @@ function Onboarding3() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center mt-auto pb-1 gap-2">
+        <div className="onboarding-actions">
           <button
             onClick={() => navigate('/map/overview')}
-            style={{
-              width: '90%', background: '#1d4ed8', color: 'white', padding: '8px',
-              borderRadius: 20, fontSize: 20, fontWeight: 600, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}
+            className="onboarding-button"
           >
             Continue
           </button>
 
           <p
             onClick={() => navigate('')}
-            className="text-center text-[#b9b9b9] text-xs mt-3 underline cursor-pointer"
+            className="onboarding-privacy"
           >
             Privacy Policy
           </p>

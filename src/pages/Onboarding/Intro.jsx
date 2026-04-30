@@ -20,15 +20,15 @@ export default function Intro() {
       clearTimeout(timer1)
       clearTimeout(timer2)
     }
-  }, [])
+  }, [navigate])
 
   return (
     <div
-      className={`h-full flex flex-col items-center justify-center gap-6 bg-white transition-opacity duration-500 ${
+      className={`onboarding-intro transition-opacity duration-500 ${
         fade ? "opacity-0" : "opacity-100"
       }`}
     >
-      <div className="w-40 h-40 rounded-full overflow-hidden animate-drop-bounce">
+      <div className="onboarding-intro-icon animate-drop-bounce">
         <img
           src={icon}
           alt="11th & Pine"
@@ -36,7 +36,7 @@ export default function Intro() {
         />
       </div>
 
-      <p className="text-xl font-semibold text-gray-800">
+      <p className="onboarding-intro-title">
         11th & Pine
       </p>
     </div>
