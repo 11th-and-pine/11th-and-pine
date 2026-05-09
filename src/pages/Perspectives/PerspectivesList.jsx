@@ -2,6 +2,30 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPerspectives } from '../../services/dataService'
 
+const LABELS = [
+  {
+    id: 'label-1',
+    title: 'Old Building',
+    address: 'xxxx Ave',
+    desc: 'A quiet street that once held voices, gatherings, and stories. Walk closer to uncover the layered memories left behind.',
+    imageUrl: 'src/assets/images/label-map.jpg',
+  },
+  {
+    id: 'label-2',
+    title: 'Old Building',
+    address: 'bbbb Ave',
+    desc: 'A nearby site connected to community movement and public memory.',
+    imageUrl: 'src/assets/images/label-map.jpg',
+  },
+  {
+    id: 'label-3',
+    title: 'Old Building',
+    address: 'cccc Ave',
+    desc: 'A place marker for another layer of the walking archive.',
+    imageUrl: 'src/assets/images/label-map.jpg',
+  },
+]
+
 function PerspectivesList() {
   const navigate = useNavigate()
   const perspectives = getPerspectives()
@@ -18,13 +42,13 @@ function PerspectivesList() {
 
   const capitalHillItems = perspectives.filter((p) => p.id !== westlake?.id)
 
-  const getItems = () => {
-    if (activeTab === 'westlake') return westlake ? [westlake] : []
-    if (activeTab === 'capital') return capitalHillItems
-    return capitalHillItems
-  }
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
 
-  const items = getItems()
+    if (tab === 'westlake') setExpandedId(westlake?.id || null)
+    if (tab === 'capital') setExpandedId(capitalHillItems[0]?.id || null)
+    if (tab === 'labels') setExpandedId(null)
+  }
 
   const handleCardClick = (id) => {
     setExpandedId(expandedId === id ? null : id)
@@ -39,10 +63,7 @@ function PerspectivesList() {
               ...styles.tab,
               ...(activeTab === 'westlake' ? styles.activeTab : {}),
             }}
-            onClick={() => {
-              setActiveTab('westlake')
-              setExpandedId('1')
-            }}
+            onClick={() => handleTabChange('westlake')}
           >
             ♘ Westlake
           </button>
@@ -52,10 +73,7 @@ function PerspectivesList() {
               ...styles.tab,
               ...(activeTab === 'capital' ? styles.activeTab : {}),
             }}
-            onClick={() => {
-              setActiveTab('capital')
-              setExpandedId(capitalHillItems[0]?.id || null)
-            }}
+            onClick={() => handleTabChange('capital')}
           >
             ☼ Capital Hill
           </button>
@@ -63,99 +81,52 @@ function PerspectivesList() {
           <button
             style={{
               ...styles.tab,
-              ...(activeTab === 'labels' ? styles.activeTab : {}),
+              ...(activeTab === 'labels' ? styles.activeTabLabel : {}),
             }}
-            onClick={() => {
-              setActiveTab('labels')
-              setExpandedId(null)
-            }}
+            onClick={() => handleTabChange('labels')}
           >
             📍 Labels
           </button>
         </div>
 
         <div style={styles.content}>
-          {items.map((p, index) => {
-            const isExpanded = expandedId === p.id
-            const progress = p.id === '1' ? 70 : index === 0 ? 5 : 0
+          {activeTab === 'westlake' && westlake && (
+            <RouteCard
+              item={westlake}
+              expanded={expandedId === westlake.id}
+              onToggle={() => handleCardClick(westlake.id)}
+              onMoreInfo={() => navigate(`/perspectives/${westlake.id}`)}
+              onContinue={() => navigate('/map/walking')}
+              title="Westlake Protest"
+              subtitle=""
+              progress={70}
+            />
+          )}
 
-            return (
-              <div key={p.id} style={styles.card}>
-                <div
-                  style={styles.cardHeader}
-                  onClick={() => handleCardClick(p.id)}
-                >
-                  <img
-                    src={p.imageUrl}
-                    alt={p.name}
-                    style={styles.thumbnail}
-                  />
+          {activeTab === 'capital' &&
+            capitalHillItems.map((p, index) => (
+              <RouteCard
+                key={p.id}
+                item={p}
+                expanded={expandedId === p.id}
+                onToggle={() => handleCardClick(p.id)}
+                onMoreInfo={() => navigate(`/perspectives/${p.id}`)}
+                onContinue={() => navigate('/map/walking')}
+                title={index === 0 ? 'Protest & Conflict' : 'Community & Support'}
+                subtitle={`From ${p.name}’s View`}
+                progress={index === 0 ? 5 : 0}
+              />
+            ))}
 
-                  <div style={styles.cardHeaderText}>
-                    <h2 style={styles.cardTitle}>
-                      {p.featuredTitle === 'WESTLAKE PROTEST'
-                        ? 'Westlake Protest'
-                        : p.name === 'Jordan'
-                          ? 'Protest & Conflict'
-                          : 'Community & Support'}
-                    </h2>
-
-                    {p.name !== 'Westlake' && (
-                      <p style={styles.cardSubtitle}>
-                        From {p.name}’s View
-                      </p>
-                    )}
-                  </div>
-
-                  <span style={styles.chevron}>
-                    {isExpanded ? '⌃' : '⌄'}
-                  </span>
-                </div>
-
-                {isExpanded && (
-                  <div style={styles.expandedContent}>
-                    <p style={styles.description}>
-                      {p.id === '1'
-                        ? 'Walk through the heart of CHOP and listen to stories tied to the streets where events unfolded.'
-                        : p.shortBio}
-                    </p>
-
-                    <div style={styles.progressBox}>
-                      <div style={styles.progressTop}>
-                        <span style={styles.progressLabel}>Walking Progress</span>
-                        <span style={styles.progressPercent}>{progress}%</span>
-                      </div>
-
-                      <div style={styles.progressTrack}>
-                        <div
-                          style={{
-                            ...styles.progressFill,
-                            width: `${progress}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={styles.buttonRow}>
-                      <button
-                        style={styles.primaryButton}
-                        onClick={() => navigate('/map/walking')}
-                      >
-                        CONTINUE WALKING
-                      </button>
-
-                      <button
-                        style={styles.secondaryButton}
-                        onClick={() => navigate(`/perspectives/${p.id}`)}
-                      >
-                        MORE INFO
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+          {activeTab === 'labels' &&
+            LABELS.map((label) => (
+              <LabelCard
+                key={label.id}
+                label={label}
+                expanded={expandedId === label.id}
+                onToggle={() => handleCardClick(label.id)}
+              />
+            ))}
         </div>
       </div>
 
@@ -170,6 +141,88 @@ function PerspectivesList() {
           <span style={styles.navTextActive}>Library</span>
         </button>
       </div>
+    </div>
+  )
+}
+
+function RouteCard({ item, expanded, onToggle, onMoreInfo, onContinue, title, subtitle, progress }) {
+  return (
+    <div style={styles.card}>
+      <div style={styles.cardHeader} onClick={onToggle}>
+        <img src={item.imageUrl} alt={item.name} style={styles.thumbnail} />
+
+        <div style={styles.cardHeaderText}>
+          <h2 style={styles.cardTitle}>{title}</h2>
+          {subtitle && <p style={styles.cardSubtitle}>{subtitle}</p>}
+        </div>
+
+        <span style={styles.chevron}>{expanded ? '⌃' : '⌄'}</span>
+      </div>
+
+      {expanded && (
+        <div style={styles.expandedContent}>
+          <p style={styles.description}>
+            {item.shortBio || item.fullBio}
+          </p>
+
+          <div style={styles.progressBox}>
+            <div style={styles.progressTop}>
+              <span style={styles.progressLabel}>Walking Progress</span>
+              <span style={styles.progressPercent}>{progress}%</span>
+            </div>
+
+            <div style={styles.progressTrack}>
+              <div style={{ ...styles.progressFill, width: `${progress}%` }} />
+            </div>
+          </div>
+
+          <div style={styles.buttonRow}>
+            <button style={styles.primaryButton} onClick={onContinue}>
+              CONTINUE WALKING
+            </button>
+
+            <button style={styles.secondaryButton} onClick={onMoreInfo}>
+              MORE INFO
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LabelCard({ label, expanded, onToggle }) {
+  return (
+    <div style={styles.labelCard}>
+      <div style={styles.labelHeader} onClick={onToggle}>
+        <img
+          src={label.imageUrl}
+          alt={label.title}
+          style={styles.labelThumbnail}
+        />
+
+        <div style={styles.labelText}>
+          <h2 style={styles.labelTitle}>{label.title}</h2>
+          <p style={styles.labelAddress}>{label.address}</p>
+        </div>
+
+        <span style={styles.labelChevron}>{expanded ? '⌃' : '⌄'}</span>
+      </div>
+
+      {expanded && (
+        <div style={styles.labelExpanded}>
+          <p style={styles.labelDesc}>{label.desc}</p>
+
+          <div style={styles.labelImageWrap}>
+            <img
+              src={label.imageUrl}
+              alt={label.title}
+              style={styles.labelLargeImage}
+            />
+            <button style={styles.closeButton}>×</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -194,7 +247,6 @@ const styles = {
     backgroundColor: '#f4f6f8',
   },
   tab: {
-    position: 'relative',
     padding: '0 0 14px',
     border: 'none',
     borderBottom: '3px solid #c7dcfb',
@@ -208,9 +260,14 @@ const styles = {
     color: '#0054d8',
     borderBottom: '3px solid #0054d8',
   },
+  activeTabLabel: {
+    color: '#0054d8',
+    borderBottom: '3px solid #0054d8',
+  },
   content: {
     padding: '28px 18px 110px',
   },
+
   card: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -316,6 +373,85 @@ const styles = {
     fontSize: '12px',
     cursor: 'pointer',
   },
+
+  labelCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '14px',
+    marginBottom: '18px',
+    boxShadow: '0 4px 10px rgba(15, 23, 42, 0.12)',
+    overflow: 'hidden',
+  },
+  labelHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    padding: '16px',
+    cursor: 'pointer',
+  },
+  labelThumbnail: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    flexShrink: 0,
+  },
+  labelText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  labelTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: 800,
+    color: '#111',
+  },
+  labelAddress: {
+    margin: '4px 0 0',
+    fontSize: '14px',
+    fontWeight: 700,
+    color: '#b7d5ff',
+  },
+  labelChevron: {
+    color: '#0054d8',
+    fontSize: '24px',
+    fontWeight: 700,
+  },
+  labelExpanded: {
+    padding: '0 18px 18px',
+  },
+  labelDesc: {
+    margin: '0 0 12px',
+    fontSize: '14px',
+    lineHeight: 1.25,
+    color: '#8b8b8b',
+  },
+  labelImageWrap: {
+    position: 'relative',
+    height: '470px',
+    borderRadius: '26px',
+    overflow: 'hidden',
+    boxShadow: '0 4px 10px rgba(15, 23, 42, 0.15)',
+  },
+  labelLargeImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: '18px',
+    right: '18px',
+    width: '32px',
+    height: '32px',
+    border: 'none',
+    background: 'rgba(0,0,0,0.15)',
+    color: '#fff',
+    fontSize: '30px',
+    lineHeight: '28px',
+    cursor: 'pointer',
+  },
+
   bottomNav: {
     height: '76px',
     borderTop: '1px solid #e1e5ea',
