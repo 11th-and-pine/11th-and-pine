@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPerspectives } from '../../services/dataService'
 
@@ -5,108 +6,169 @@ function PerspectivesList() {
   const navigate = useNavigate()
   const perspectives = getPerspectives()
 
-  const featuredPerspective =
-    perspectives.find(
-      (p) =>
-        p.featuredTitle === 'WESTLAKE PROTEST' ||
-        p.name?.toLowerCase().includes('westlake')
-    ) || perspectives[0]
+  const [activeTab, setActiveTab] = useState('westlake')
+  const [expandedId, setExpandedId] = useState('1')
 
-  const remainingPerspectives = perspectives.filter(
-    (p) => p.id !== featuredPerspective?.id
+  const westlake = perspectives.find(
+    (p) =>
+      p.featuredTitle === 'WESTLAKE PROTEST' ||
+      p.name?.toLowerCase().includes('westlake') ||
+      p.id === '1'
   )
+
+  const capitalHillItems = perspectives.filter((p) => p.id !== westlake?.id)
+
+  const getItems = () => {
+    if (activeTab === 'westlake') return westlake ? [westlake] : []
+    if (activeTab === 'capital') return capitalHillItems
+    return capitalHillItems
+  }
+
+  const items = getItems()
+
+  const handleCardClick = (id) => {
+    setExpandedId(expandedId === id ? null : id)
+  }
 
   return (
     <div style={styles.page}>
-      <div style={styles.topBar}>
-        <button style={styles.backButton} onClick={() => navigate('/map/overview')} aria-label="Back">
-          <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        <h1 style={styles.topBarTitle}>PERSPECTIVES</h1>
-        <div style={styles.topBarSpacer} />
+      <div style={styles.scrollArea}>
+        <div style={styles.tabs}>
+          <button
+            style={{
+              ...styles.tab,
+              ...(activeTab === 'westlake' ? styles.activeTab : {}),
+            }}
+            onClick={() => {
+              setActiveTab('westlake')
+              setExpandedId('1')
+            }}
+          >
+            ♘ Westlake
+          </button>
+
+          <button
+            style={{
+              ...styles.tab,
+              ...(activeTab === 'capital' ? styles.activeTab : {}),
+            }}
+            onClick={() => {
+              setActiveTab('capital')
+              setExpandedId(capitalHillItems[0]?.id || null)
+            }}
+          >
+            ☼ Capital Hill
+          </button>
+
+          <button
+            style={{
+              ...styles.tab,
+              ...(activeTab === 'labels' ? styles.activeTab : {}),
+            }}
+            onClick={() => {
+              setActiveTab('labels')
+              setExpandedId(null)
+            }}
+          >
+            📍 Labels
+          </button>
+        </div>
+
+        <div style={styles.content}>
+          {items.map((p, index) => {
+            const isExpanded = expandedId === p.id
+            const progress = p.id === '1' ? 70 : index === 0 ? 5 : 0
+
+            return (
+              <div key={p.id} style={styles.card}>
+                <div
+                  style={styles.cardHeader}
+                  onClick={() => handleCardClick(p.id)}
+                >
+                  <img
+                    src={p.imageUrl}
+                    alt={p.name}
+                    style={styles.thumbnail}
+                  />
+
+                  <div style={styles.cardHeaderText}>
+                    <h2 style={styles.cardTitle}>
+                      {p.featuredTitle === 'WESTLAKE PROTEST'
+                        ? 'Westlake Protest'
+                        : p.name === 'Jordan'
+                          ? 'Protest & Conflict'
+                          : 'Community & Support'}
+                    </h2>
+
+                    {p.name !== 'Westlake' && (
+                      <p style={styles.cardSubtitle}>
+                        From {p.name}’s View
+                      </p>
+                    )}
+                  </div>
+
+                  <span style={styles.chevron}>
+                    {isExpanded ? '⌃' : '⌄'}
+                  </span>
+                </div>
+
+                {isExpanded && (
+                  <div style={styles.expandedContent}>
+                    <p style={styles.description}>
+                      {p.id === '1'
+                        ? 'Walk through the heart of CHOP and listen to stories tied to the streets where events unfolded.'
+                        : p.shortBio}
+                    </p>
+
+                    <div style={styles.progressBox}>
+                      <div style={styles.progressTop}>
+                        <span style={styles.progressLabel}>Walking Progress</span>
+                        <span style={styles.progressPercent}>{progress}%</span>
+                      </div>
+
+                      <div style={styles.progressTrack}>
+                        <div
+                          style={{
+                            ...styles.progressFill,
+                            width: `${progress}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={styles.buttonRow}>
+                      <button
+                        style={styles.primaryButton}
+                        onClick={() => navigate('/map/walking')}
+                      >
+                        CONTINUE WALKING
+                      </button>
+
+                      <button
+                        style={styles.secondaryButton}
+                        onClick={() => navigate(`/perspectives/${p.id}`)}
+                      >
+                        MORE INFO
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
-      <div style={styles.scrollArea}>
-        <div style={styles.content}>
-          <p style={styles.eyebrow}>NEIGHBORHOOD LENS</p>
+      <div style={styles.bottomNav}>
+        <button style={styles.navButton} onClick={() => navigate('/map/overview')}>
+          <div style={styles.navIconInactive}>⌂</div>
+          <span style={styles.navTextInactive}>Home</span>
+        </button>
 
-          <h2 style={styles.heroTitle}>
-            Explore the
-            <br />
-            Routes
-          </h2>
-
-          <p style={styles.description}>
-            This part provides background context and deeper insights that
-            complement the audio you hear as you move through the space.
-          </p>
-
-          {featuredPerspective && (
-            <div
-              style={styles.featuredCard}
-              onClick={() => navigate(`/perspectives/${featuredPerspective.id}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  navigate(`/perspectives/${featuredPerspective.id}`)
-                }
-              }}
-            >
-              <img
-                src={
-                  featuredPerspective.imageUrl ||
-                  'https://images.unsplash.com/photo-1593113598332-cd59a93a9c98?auto=format&fit=crop&w=1200&q=80'
-                }
-                alt={featuredPerspective.name}
-                style={styles.featuredImage}
-              />
-              <div style={styles.featuredOverlay} />
-              <div style={styles.featuredTextWrap}>
-                <p style={styles.featuredLabel}>CORE NARRATIVE</p>
-                <h3 style={styles.featuredTitle}>WESTLAKE PROTEST</h3>
-              </div>
-            </div>
-          )}
-
-          <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>CHOP</h3>
-            <div style={styles.sectionLine} />
-          </div>
-
-          <div style={styles.grid}>
-            {remainingPerspectives.map((p) => (
-              <div
-                key={p.id}
-                style={styles.smallCard}
-                onClick={() => navigate(`/perspectives/${p.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    navigate(`/perspectives/${p.id}`)
-                  }
-                }}
-              >
-                <img
-                  src={
-                    p.imageUrl ||
-                    'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80'
-                  }
-                  alt={p.name}
-                  style={styles.smallImage}
-                />
-                <div style={styles.smallOverlay} />
-                <div style={styles.smallTextWrap}>
-                  <h4 style={styles.smallTitle}>{p.name}</h4>
-                  <p style={styles.smallBio}>{p.shortBio}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <button style={styles.navButton} onClick={() => navigate('/perspectives')}>
+          <div style={styles.navIconActive}>▰</div>
+          <span style={styles.navTextActive}>Library</span>
+        </button>
       </div>
     </div>
   )
@@ -115,178 +177,182 @@ function PerspectivesList() {
 const styles = {
   page: {
     height: '100%',
+    backgroundColor: '#f4f6f8',
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: '#f3f3f1',
-    color: '#1f2937',
-  },
-  topBar: {
-    height: '78px',
-    minHeight: '78px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 16px',
-    borderBottom: '1px solid #ddd9d2',
-    backgroundColor: '#f3f3f1',
-    flexShrink: 0,
-  },
-  backButton: {
-    width: '39px',
-    height: '39px',
-    border: 'none',
-    borderRadius: '50%',
-    background: '#ffffff',
-    boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
-    padding: 0,
-    cursor: 'pointer',
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topBarTitle: {
-    fontSize: '20px',
-    fontWeight: '800',
-    letterSpacing: '0.5px',
-    color: '#1f2a44',
-    margin: 0,
-  },
-  topBarSpacer: {
-    width: '40px',
-    height: '40px',
+    color: '#111827',
   },
   scrollArea: {
     flex: 1,
     overflowY: 'auto',
     WebkitOverflowScrolling: 'touch',
   },
-  content: {
-    padding: '28px 20px 28px',
+  tabs: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    padding: '58px 28px 0',
+    backgroundColor: '#f4f6f8',
   },
-  eyebrow: {
-    fontSize: '10px',
-    letterSpacing: '2.8px',
-    color: '#586a97',
-    marginBottom: '18px',
-  },
-  heroTitle: {
-    fontSize: 'clamp(40px, 13vw, 52px)',
-    lineHeight: 0.95,
-    fontWeight: '800',
-    color: '#2f3431',
-    margin: '0 0 22px 0',
-    letterSpacing: '-1.5px',
-  },
-  description: {
-    fontSize: '16px',
-    lineHeight: 1.55,
-    color: '#626664',
-    marginBottom: '28px',
-  },
-  featuredCard: {
+  tab: {
     position: 'relative',
-    width: '100%',
-    height: '370px',
-    overflow: 'hidden',
-    marginBottom: '28px',
+    padding: '0 0 14px',
+    border: 'none',
+    borderBottom: '3px solid #c7dcfb',
+    background: 'transparent',
+    color: '#b8d4fb',
+    fontSize: '14px',
+    fontWeight: 700,
     cursor: 'pointer',
-    backgroundColor: '#ccc',
   },
-  featuredImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block',
+  activeTab: {
+    color: '#0054d8',
+    borderBottom: '3px solid #0054d8',
   },
-  featuredOverlay: {
-    position: 'absolute',
-    inset: 0,
-    background:
-      'linear-gradient(to top, rgba(0,0,0,0.72) 12%, rgba(0,0,0,0.18) 52%, rgba(0,0,0,0.04) 100%)',
+  content: {
+    padding: '28px 18px 110px',
   },
-  featuredTextWrap: {
-    position: 'absolute',
-    left: '18px',
-    right: '18px',
-    bottom: '24px',
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: '14px',
+    marginBottom: '22px',
+    boxShadow: '0 4px 10px rgba(15, 23, 42, 0.12)',
+    overflow: 'hidden',
   },
-  featuredLabel: {
-    fontSize: '10px',
-    letterSpacing: '3px',
-    color: 'rgba(255,255,255,0.75)',
-    marginBottom: '12px',
-  },
-  featuredTitle: {
-    fontSize: '34px',
-    lineHeight: 1.02,
-    fontWeight: '800',
-    color: '#ffffff',
-    margin: 0,
-    textTransform: 'uppercase',
-  },
-  sectionHeader: {
+  cardHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-    marginBottom: '18px',
+    gap: '14px',
+    padding: '16px',
+    cursor: 'pointer',
   },
-  sectionTitle: {
-    fontSize: '28px',
-    fontWeight: '800',
-    color: '#2f3431',
-    margin: 0,
+  thumbnail: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '6px',
+    objectFit: 'cover',
+    flexShrink: 0,
   },
-  sectionLine: {
+  cardHeaderText: {
     flex: 1,
-    height: '1px',
-    backgroundColor: '#d8d4cd',
-    marginTop: '4px',
+    minWidth: 0,
   },
-  grid: {
+  cardTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: 800,
+    color: '#111',
+    lineHeight: 1.1,
+  },
+  cardSubtitle: {
+    margin: '6px 0 0',
+    fontSize: '14px',
+    color: '#587092',
+  },
+  chevron: {
+    color: '#0054d8',
+    fontSize: '24px',
+    fontWeight: 700,
+  },
+  expandedContent: {
+    padding: '0 16px 16px',
+  },
+  description: {
+    margin: '6px 0 18px',
+    fontSize: '14px',
+    lineHeight: 1.25,
+    color: '#777',
+  },
+  progressBox: {
+    backgroundColor: '#f7f7f7',
+    padding: '12px',
+    marginBottom: '16px',
+  },
+  progressTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: '8px',
+  },
+  progressLabel: {
+    fontSize: '12px',
+    color: '#111',
+  },
+  progressPercent: {
+    fontSize: '12px',
+    fontWeight: 700,
+    color: '#0054d8',
+  },
+  progressTrack: {
+    width: '100%',
+    height: '6px',
+    backgroundColor: '#d9d9d9',
+    borderRadius: '999px',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#0054d8',
+    borderRadius: '999px',
+  },
+  buttonRow: {
+    display: 'grid',
+    gridTemplateColumns: '2fr 1fr',
+    gap: '12px',
+  },
+  primaryButton: {
+    height: '34px',
+    border: 'none',
+    borderRadius: '8px',
+    backgroundColor: '#064be8',
+    color: '#fff',
+    fontSize: '12px',
+    cursor: 'pointer',
+  },
+  secondaryButton: {
+    height: '34px',
+    border: 'none',
+    borderRadius: '8px',
+    backgroundColor: '#e8ebef',
+    color: '#5c6675',
+    fontSize: '12px',
+    cursor: 'pointer',
+  },
+  bottomNav: {
+    height: '76px',
+    borderTop: '1px solid #e1e5ea',
+    backgroundColor: '#f4f6f8',
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '14px',
-    paddingBottom: '24px',
+    flexShrink: 0,
   },
-  smallCard: {
-    position: 'relative',
-    height: '390px',
-    borderRadius: '8px',
-    overflow: 'hidden',
+  navButton: {
+    border: 'none',
+    background: 'transparent',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
     cursor: 'pointer',
-    backgroundColor: '#d7d7d7',
   },
-  smallImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block',
+  navIconInactive: {
+    fontSize: '26px',
+    color: '#b7d5ff',
+    lineHeight: 1,
   },
-  smallOverlay: {
-    position: 'absolute',
-    inset: 0,
-    background:
-      'linear-gradient(to top, rgba(0,0,0,0.78) 10%, rgba(0,0,0,0.18) 56%, rgba(0,0,0,0.04) 100%)',
+  navTextInactive: {
+    fontSize: '11px',
+    color: '#b7d5ff',
+    marginTop: '4px',
   },
-  smallTextWrap: {
-    position: 'absolute',
-    left: '14px',
-    right: '14px',
-    bottom: '16px',
+  navIconActive: {
+    fontSize: '26px',
+    color: '#0054ff',
+    lineHeight: 1,
+    transform: 'rotate(-16deg)',
   },
-  smallTitle: {
-    fontSize: '24px',
-    fontWeight: '800',
-    color: '#ffffff',
-    margin: '0 0 8px 0',
-    textTransform: 'uppercase',
-  },
-  smallBio: {
-    fontSize: '13px',
-    lineHeight: 1.25,
-    color: 'rgba(255,255,255,0.88)',
-    margin: 0,
+  navTextActive: {
+    fontSize: '11px',
+    color: '#0054ff',
+    marginTop: '4px',
   },
 }
 
