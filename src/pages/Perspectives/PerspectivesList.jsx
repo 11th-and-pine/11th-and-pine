@@ -197,8 +197,8 @@ function RouteCard({ item, expanded, onToggle, onMoreInfo, onContinue, title, su
 
           <div style={styles.buttonRow}>
             <button style={styles.primaryButton} onClick={onContinue}>
-              CONTINUE WALKING
-            </button>
+  {progress === 0 ? 'START WALKING' : 'CONTINUE WALKING'}
+</button>
 
             <button style={styles.secondaryButton} onClick={onMoreInfo}>
               MORE INFO
