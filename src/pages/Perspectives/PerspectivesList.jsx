@@ -267,7 +267,7 @@ const styles = {
   tab: {
     padding: '0 0 14px',
     border: 'none',
-    borderBottom: '3px solid #c7dcfb',
+    borderBottom: '1.5px solid #c7dcfb',
     background: 'transparent',
     color: '#b8d4fb',
     fontSize: '14px',
