@@ -26,6 +26,27 @@ const LABELS = [
   },
 ]
 
+function ChevronIcon({ expanded }) {
+  return (
+    <span
+      style={{
+        ...styles.chevron,
+        transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+      }}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M6 9L12 15L18 9"
+          stroke="#0054d8"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  )
+}
+
 function PerspectivesList() {
   const navigate = useNavigate()
   const perspectives = getPerspectives()
@@ -156,14 +177,12 @@ function RouteCard({ item, expanded, onToggle, onMoreInfo, onContinue, title, su
           {subtitle && <p style={styles.cardSubtitle}>{subtitle}</p>}
         </div>
 
-        <span style={styles.chevron}>{expanded ? '⌃' : '⌄'}</span>
+        <ChevronIcon expanded={expanded} />
       </div>
 
       {expanded && (
         <div style={styles.expandedContent}>
-          <p style={styles.description}>
-            {item.shortBio || item.fullBio}
-          </p>
+          <p style={styles.description}>{item.shortBio || item.fullBio}</p>
 
           <div style={styles.progressBox}>
             <div style={styles.progressTop}>
@@ -206,7 +225,7 @@ function LabelCard({ label, expanded, onToggle }) {
           <p style={styles.labelAddress}>{label.address}</p>
         </div>
 
-        <span style={styles.labelChevron}>{expanded ? '⌃' : '⌄'}</span>
+        <ChevronIcon expanded={expanded} />
       </div>
 
       {expanded && (
@@ -219,7 +238,6 @@ function LabelCard({ label, expanded, onToggle }) {
               alt={label.title}
               style={styles.labelLargeImage}
             />
-            <button style={styles.closeButton}>×</button>
           </div>
         </div>
       )}
@@ -267,7 +285,6 @@ const styles = {
   content: {
     padding: '28px 18px 110px',
   },
-
   card: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -306,9 +323,13 @@ const styles = {
     color: '#587092',
   },
   chevron: {
-    color: '#0054d8',
-    fontSize: '24px',
-    fontWeight: 700,
+    width: '28px',
+    height: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    transition: 'transform 0.2s ease',
   },
   expandedContent: {
     padding: '0 16px 16px',
@@ -373,7 +394,6 @@ const styles = {
     fontSize: '12px',
     cursor: 'pointer',
   },
-
   labelCard: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -411,11 +431,6 @@ const styles = {
     fontWeight: 700,
     color: '#b7d5ff',
   },
-  labelChevron: {
-    color: '#0054d8',
-    fontSize: '24px',
-    fontWeight: 700,
-  },
   labelExpanded: {
     padding: '0 18px 18px',
   },
@@ -438,20 +453,6 @@ const styles = {
     objectFit: 'cover',
     display: 'block',
   },
-  closeButton: {
-    position: 'absolute',
-    top: '18px',
-    right: '18px',
-    width: '32px',
-    height: '32px',
-    border: 'none',
-    background: 'rgba(0,0,0,0.15)',
-    color: '#fff',
-    fontSize: '30px',
-    lineHeight: '28px',
-    cursor: 'pointer',
-  },
-
   bottomNav: {
     height: '76px',
     borderTop: '1px solid #e1e5ea',
