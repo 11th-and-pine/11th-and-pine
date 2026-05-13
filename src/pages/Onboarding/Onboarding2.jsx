@@ -94,10 +94,7 @@ function Onboarding2() {
             Continue
           </button>
 
-          <p
-            onClick={() => navigate('/map/overview')}
-            className="onboarding-privacy"
-          >
+          <p>
             Privacy Policy
           </p>
         </div>

@@ -5,8 +5,13 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import PinIcon from '../../components/PinIcon'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
+const INITIAL_VIEW_STATE = {longitude: -122.328, latitude: 47.6148, zoom: 15}
+const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 
-const MAIN_ROUTE = [
+// Height of the "peek" area visible when the sheet is collapsed (drag handle + title)
+const COLLAPSED_PEEK = 88
+
+const WESTLAKE_ROUTE = [
   [47.61208726167953, -122.33701558200671],
   [47.6117017475211, -122.33664367843423],
   [47.61217739456354, -122.33554583325099],
@@ -17,7 +22,7 @@ const MAIN_ROUTE = [
   [47.61534637433494, -122.31998484534672]
 ]
 
-const EXPLORE_ROUTES = [
+const CHOP_ROUTES = [
   { color: '#f59e0b', path: [
     [47.61534637433494, -122.31998484534672],
     [47.61537792391303, -122.31834587334546],
@@ -86,225 +91,274 @@ const POIS = [
   }
 ]
 
-const TAGS = ['Uprising', 'Movement', 'Resistance']
-
 const toLngLat = ([lat, lng]) => [lng, lat]
 
-// Height of the "peek" area visible when the sheet is collapsed (drag handle + title)
-const COLLAPSED_PEEK = 88
+function getRouteBounds() {
+  const allPoints = [
+    ...WESTLAKE_ROUTE,
+    ...CHOP_ROUTES.flatMap(route => route.path),
+  ]
+
+  const lngs = allPoints.map(point => point[1])
+  const lats = allPoints.map(point => point[0])
+
+  return [
+    [Math.min(...lngs), Math.min(...lats)],
+    [Math.max(...lngs), Math.max(...lats)],
+  ]
+}
+
 
 export default function RouteOverview() {
   const navigate = useNavigate()
   const mapRef = useRef()
   const containerRef = useRef()
   const sheetRef = useRef()
+  const drag = useRef({ 
+    active: false, 
+    startY: 0, 
+    startCollapsed: false 
+  })
 
   // collapsed = true means sheet is pushed down showing only the peek area
   const [collapsed, setCollapsed] = useState(false)
   const [dragOffset, setDragOffset] = useState(0)   // live drag delta in px
   const [sheetHeight, setSheetHeight] = useState(0)
   const [openPOI, setOpenPOI] = useState(null)
-  const drag = useRef({ active: false, startY: 0, startCollapsed: false })
+  // Mirrors drag.current.active so the render output can react to drag start/end
+  // without reading a ref during render.
+  const [dragging, setDragging] = useState(false)
 
   // Measure sheet height (updates on content changes / window resize / orientation change)
   useLayoutEffect(() => {
-    if (!sheetRef.current) return
+    if (!sheetRef.current) {
+      return
+    }
+
     const node = sheetRef.current
     const update = () => setSheetHeight(node.offsetHeight)
+
     update()
+
     const ro = new ResizeObserver(update)
     ro.observe(node)
+
     window.addEventListener('resize', update)
+
     return () => {
       ro.disconnect()
       window.removeEventListener('resize', update)
     }
   }, [])
 
-  const handleMapLoad = () => {
-    const allPoints = [...MAIN_ROUTE, ...EXPLORE_ROUTES.flatMap(r => r.path)]
-    const lngs = allPoints.map(p => p[1])
-    const lats = allPoints.map(p => p[0])
-    if (mapRef.current) {
-      mapRef.current.fitBounds(
-        [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
-        { padding: { top: 50, bottom: 180, left: 30, right: 30 }, duration: 600 }
-      )
-    }
-  }
-
   // Sheet sizes itself to content; we translateY to collapse/expand
   const collapsedTranslate = Math.max(0, sheetHeight - COLLAPSED_PEEK)
   const baseTranslate = collapsed ? collapsedTranslate : 0
   const translateY = Math.min(
     collapsedTranslate,
-    Math.max(0, baseTranslate + dragOffset)
+    Math.max(0, baseTranslate + dragOffset),
   )
 
+  const isAnimating = !dragging
+
+  function handleMapLoad() {
+    if (mapRef.current) {
+      mapRef.current.fitBounds(
+        getRouteBounds(),
+        {
+          padding: {
+            top: 50,
+            bottom: 180,
+            left: 30,
+            right: 30,
+          },
+          duration: 600,
+        },
+      )
+    }
+  }
+
+
   const onPointerDown = (e) => {
-    drag.current = { active: true, startY: e.clientY, startCollapsed: collapsed }
+    drag.current = {
+      active: true,
+      startY: e.clientY,
+      startCollapsed: collapsed,
+    }
+    setDragging(true)
     setDragOffset(0)
     e.currentTarget.setPointerCapture(e.pointerId)
   }
 
   const onPointerMove = (e) => {
-    if (!drag.current.active) return
+    if (!drag.current.active) {
+      return
+    }
     setDragOffset(e.clientY - drag.current.startY)
   }
 
   const onPointerUp = () => {
-    if (!drag.current.active) return
+    if (!drag.current.active) {
+      return
+    }
     drag.current.active = false
-    const finalTranslate = (drag.current.startCollapsed ? collapsedTranslate : 0) + dragOffset
-    // Snap to nearest state based on midpoint
+    setDragging(false)
+
+    const startTranslate = drag.current.startCollapsed ? collapsedTranslate : 0
+    const finalTranslate = startTranslate + dragOffset
+
     setCollapsed(finalTranslate > collapsedTranslate / 2)
     setDragOffset(0)
   }
 
-  const isAnimating = !drag.current.active
+  function handleOpenPOI(poi) {
+    setOpenPOI(poi)
+  }
 
   return (
-    <div ref={containerRef} style={{ height: '100%', width: '100%', position: 'relative', overflow: 'hidden' }}>
-
-      {/* ── Full-height interactive map ── */}
+    <div ref={containerRef} style={styles.page}>
       <Map
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
-        initialViewState={{ longitude: -122.328, latitude: 47.6148, zoom: 13 }}
-        style={{ width: '100%', height: '100%' }}
-        mapStyle="mapbox://styles/mapbox/light-v11"
+        initialViewState={INITIAL_VIEW_STATE}
+        style={styles.map}
+        mapStyle={MAP_STYLE}
         onLoad={handleMapLoad}
         attributionControl={false}
       >
-        {EXPLORE_ROUTES.map((route, i) => (
-          <Source key={i} id={`explore-${i}`} type="geojson"
-            data={{ type: 'Feature', geometry: { type: 'LineString', coordinates: route.path.map(toLngLat) } }}
+        {CHOP_ROUTES.map((route, index) => (
+          <Source
+            key={index}
+            id={`explore-${index}`}
+            type="geojson"
+            data={{
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: route.path.map(toLngLat),
+              }
+            }}
           >
-            <Layer id={`explore-layer-${i}`} type="line"
-              layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-              paint={{ 'line-color': route.color, 'line-width': 3, 'line-opacity': 0.6, 'line-dasharray': [2, 1.5] }}
+            <Layer
+              id={`explore-layer-${index}`}
+              type="line"
+              layout={styles.routeLineLayout}
+              paint={styles.exploreRoutePaint(route.color)}
             />
           </Source>
         ))}
 
-        <Source id="main-route" type="geojson"
-          data={{ type: 'Feature', geometry: { type: 'LineString', coordinates: MAIN_ROUTE.map(toLngLat) } }}
+        <Source
+          id="main-route"
+          type="geojson"
+          data={{
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: WESTLAKE_ROUTE.map(toLngLat),
+            },
+          }}
         >
-          <Layer id="main-route-layer" type="line"
-            layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            paint={{ 'line-color': '#84C4FF', 'line-width': 5, 'line-opacity': 0.9 }}
+          <Layer
+            id="main-route-layer"
+            type="line"
+            layout={styles.routeLineLayout}
+            paint={styles.mainRoutePaint}
           />
         </Source>
 
-        {EXPLORE_ROUTES.map((route, i) => {
+        {CHOP_ROUTES.map((route, index) => {
           const end = route.path[route.path.length - 1]
+
           return (
-            <Marker key={`end-${i}`} longitude={end[1]} latitude={end[0]} anchor="center">
-              <div style={{ width: 10, height: 10, background: route.color, border: '2.5px solid white', 
-                borderRadius: '50%', boxShadow: `0 2px 8px ${route.color}88` 
-              }} />
+            <Marker
+              key={`end-${index}`}
+              longitude={end[1]}
+              latitude={end[0]}
+              anchor="center"
+            >
+              <div style={styles.exploreEndMarker(route.color)} />
             </Marker>
           )
         })}
 
         {/* POI markers */}
         {POIS.map(poi => (
-          <Marker key={poi.id} longitude={poi.position[1]} latitude={poi.position[0]} anchor="bottom">
-            <div onClick={() => setOpenPOI(poi)} style={{ cursor: 'pointer', lineHeight: 0 }}>
+          <Marker
+            key={poi.id}
+            longitude={poi.position[1]}
+            latitude={poi.position[0]}
+            anchor="bottom"
+          >
+            <div
+              onClick={() => handleOpenPOI(poi)}
+              style={styles.poiMarker}
+            >
               <PinIcon size={24} />
             </div>
           </Marker>
         ))}
 
-        {/* Start marker — green */}
-        <Marker longitude={MAIN_ROUTE[0][1]} latitude={MAIN_ROUTE[0][0]} anchor="center">
-          <div style={{ width: 14, height: 14, background: '#22c55e', border: '3px solid white', borderRadius: '50%',
-            boxShadow: '0 2px 8px rgba(34,197,94,0.6)' 
-          }} />
+        {/* Start marker */}
+        <Marker 
+          longitude={WESTLAKE_ROUTE[0][1]} 
+          latitude={WESTLAKE_ROUTE[0][0]} 
+          anchor="center"
+        >
+          <div style={styles.startMarker} />
         </Marker>
 
-        {/* End marker — red */}
-        <Marker longitude={MAIN_ROUTE[MAIN_ROUTE.length - 1][1]} latitude={MAIN_ROUTE[MAIN_ROUTE.length - 1][0]} anchor="center">
-          <div style={{ width: 14, height: 14, background: '#ef4444', border: '3px solid white', borderRadius: '50%', 
-            boxShadow: '0 2px 8px rgba(239,68,68,0.6)' 
-          }} />
+        {/* End marker */}
+        <Marker 
+          longitude={WESTLAKE_ROUTE[WESTLAKE_ROUTE.length - 1][1]} 
+          latitude={WESTLAKE_ROUTE[WESTLAKE_ROUTE.length - 1][0]} 
+          anchor="center"
+        >
+          <div style={styles.endMarker} /> 
         </Marker>
       </Map>
 
       {/* POI detail card */}
       {openPOI && (
-        <div
-          onClick={() => setOpenPOI(null)}
-          style={{
-            position: 'absolute', inset: 0, zIndex: 2500,
-            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              width: 'min(346px, 88vw)',
-              height: 'min(538px, 75vh)',
-              borderRadius: 40, overflow: 'hidden',
-              position: 'relative', flexShrink: 0,
-              background: 'linear-gradient(160deg, #3d3d3d 0%, #1a1a1a 100%)',
-            }}
-          >
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.03)' }} />
-            <div style={{
-              position: 'absolute', top: 80, left: 0, right: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              opacity: 0.35,
-            }}><PinIcon size={72} /></div>
+        <div onClick={() => setOpenPOI(null)} style={styles.poiOverlay}>
+          <div onClick={e => e.stopPropagation()} style={styles.poiCard}>
+            <div style={styles.poiCardTexture} />
+            <div style={styles.poiCardIcon}>
+              <PinIcon size={72} />
+            </div>
 
             <button
               onClick={() => setOpenPOI(null)}
-              style={{
-                position: 'absolute', top: 20, right: 20, zIndex: 10,
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: 'white', fontSize: 15, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >✕</button>
+              style={styles.poiCloseButton}
+            >
+              ✕
+            </button>
 
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.75) 55%, transparent 100%)',
-              padding: '48px 28px 36px',
-            }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12,
-                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
-                padding: '4px 12px', borderRadius: 99,
-              }}>
+            <div style={styles.poiCardContent}>
+              <div style={styles.poiLocationPill}>
                 <PinIcon size={14} shadow={false} />
-                <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>{openPOI.name}</span>
+
+                <span style={styles.poiLocationText}>
+                  {openPOI.name}
+                </span>
               </div>
 
-              <h2 style={{ color: 'white', fontSize: 26, fontWeight: 700, margin: '0 0 10px', lineHeight: 1.2 }}>
+              <h2 style={styles.poiTitle}>
                 {openPOI.title}
               </h2>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.65, margin: '0 0 26px' }}>
+
+              <p style={styles.poiDescription}>
                 {openPOI.desc}
               </p>
 
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button style={{
-                  padding: '10px 22px', borderRadius: 99,
-                  background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)',
-                  border: '1.5px solid rgba(255,255,255,0.38)',
-                  color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                }}>Firsthand</button>
-                <button style={{
-                  padding: '10px 22px', borderRadius: 99,
-                  background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)',
-                  border: '1.5px solid rgba(255,255,255,0.38)',
-                  color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                }}>Context</button>
+              <div style={styles.poiButtonRow}>
+                <button style={styles.poiTagButton}>
+                  Firsthand
+                </button>
+
+                <button style={styles.poiTagButton}>
+                  Context
+                </button>
               </div>
             </div>
           </div>
@@ -312,74 +366,39 @@ export default function RouteOverview() {
       )}
 
       {/* ── Draggable bottom sheet (auto-sized to content) ── */}
-      <div ref={sheetRef} style={{
-        position: 'absolute',
-        left: 0, right: 0, bottom: 0,
-        transform: `translateY(${translateY}px)`,
-        background: 'white',
-        borderRadius: '22px 22px 0 0',
-        boxShadow: '0 -6px 32px rgba(0,0,0,0.13)',
-        transition: isAnimating ? 'transform 0.3s cubic-bezier(0.32,0.72,0,1)' : 'none',
-        zIndex: 10,
-        display: 'flex', flexDirection: 'column',
-        maxHeight: '80dvh',
-      }}>
+      <div ref={sheetRef} style={styles.bottomSheet(translateY, isAnimating)}>
         {/* Drag handle */}
         <div
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          style={{ padding: '14px 0 8px', cursor: 'grab', touchAction: 'none', flexShrink: 0 }}
+          style={styles.sheetHandleArea}
         >
-          <div style={{ width: 40, height: 4, background: '#d1d5db', borderRadius: 2, margin: '0 auto' }} />
+          <div style={styles.sheetHandle} />
         </div>
 
         {/* Content */}
-        <div style={{ padding: '8px 24px max(24px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#0a0a0a', marginBottom: 16, 
-            letterSpacing: '-0.5px', textAlign: 'center'
-          }}>
-            11th & Pine
+        <div style={styles.sheetContent}>
+          <div style={styles.title}>
+            Explore CHOP
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {TAGS.map(tag => (
-              <span key={tag} style={{
-                padding: '6px 16px',
-                border: '1.5px solid #1d4ed8',
-                borderRadius: 16,
-                fontSize: 13, fontWeight: 500,
-                color: '#374151'
-              }}>
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', lineHeight: 1.6, margin: '0 0 28px', textAlign: 'center' }}>
-            Follow the main route first, then choose your own path to explore different perspectives.
+          <p style={styles.description}>
+            Select a location to begin
           </p>
 
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={styles.buttonRow}>
             <button
-              onClick={() => navigate('/map/walking')}
-              style={{
-                flex: 1, background: '#1d4ed8', color: 'white', padding: '16px', borderRadius: 16, fontSize: 16, 
-                fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
-              }}
+              onClick={() => navigate('/map/navigate')}
+              style={styles.startButton}
             >
-              Let's Start Your Journey →
+              Start Journey
             </button>
+
             <button
               onClick={() => navigate('/perspectives')}
-              style={{
-                width: 56, height: 56,
-                background: '#f3f4f6',
-                borderRadius: 16, fontSize: 22,
-                cursor: 'pointer', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              style={styles.archiveButton}
             >
               📖
             </button>
@@ -389,4 +408,290 @@ export default function RouteOverview() {
 
     </div>
   )
+}
+
+const styles = {
+  page: {
+    height: '100%',
+    width: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+
+  routeLineLayout: {
+    'line-cap': 'round',
+    'line-join': 'round',
+  },
+
+  exploreRoutePaint: color => ({
+    'line-color': color,
+    'line-width': 3,
+    'line-opacity': 0.6,
+    'line-dasharray': [2, 1.5],
+  }),
+
+  mainRoutePaint: {
+    'line-color': '#84C4FF',
+    'line-width': 5,
+    'line-opacity': 0.9,
+  },
+
+  exploreEndMarker: color => ({
+    width: 10,
+    height: 10,
+    background: color,
+    border: '2.5px solid white',
+    borderRadius: '50%',
+    boxShadow: `0 2px 8px ${color}88`,
+  }),
+
+  poiMarker: {
+    cursor: 'pointer',
+    lineHeight: 0,
+  },
+
+  startMarker: {
+    width: 14,
+    height: 14,
+    background: '#22c55e',
+    border: '3px solid white',
+    borderRadius: '50%',
+    boxShadow: '0 2px 8px rgba(34,197,94,0.6)',
+  },
+
+  endMarker: {
+    width: 14,
+    height: 14,
+    background: '#ef4444',
+    border: '3px solid white',
+    borderRadius: '50%',
+    boxShadow: '0 2px 8px rgba(239,68,68,0.6)',
+  },
+
+  poiOverlay: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 2500,
+    background: 'rgba(0,0,0,0.55)',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  poiCard: {
+    width: 'min(346px, 88vw)',
+    height: 'min(538px, 75vh)',
+    borderRadius: 40,
+    overflow: 'hidden',
+    position: 'relative',
+    flexShrink: 0,
+    background: 'linear-gradient(160deg, #3d3d3d 0%, #1a1a1a 100%)',
+  },
+
+  poiCardTexture: {
+    position: 'absolute',
+    inset: 0,
+    background: 'rgba(255,255,255,0.03)',
+  },
+
+  poiCardIcon: {
+    position: 'absolute',
+    top: 80,
+    left: 0,
+    right: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.35,
+  },
+
+  poiCloseButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
+    width: 34,
+    height: 34,
+    borderRadius: '50%',
+    background: 'rgba(0,0,0,0.4)',
+    backdropFilter: 'blur(8px)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    color: 'white',
+    fontSize: 15,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  poiCardContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.75) 55%, transparent 100%)',
+    padding: '48px 28px 36px',
+  },
+
+  poiLocationPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+    background: 'rgba(255,255,255,0.12)',
+    border: '1px solid rgba(255,255,255,0.25)',
+    padding: '4px 12px',
+    borderRadius: 99,
+  },
+
+  poiLocationText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 600,
+  },
+
+  poiTitle: {
+    color: 'white',
+    fontSize: 26,
+    fontWeight: 700,
+    margin: '0 0 10px',
+    lineHeight: 1.2,
+  },
+
+  poiDescription: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    lineHeight: 1.65,
+    margin: '0 0 26px',
+  },
+
+  poiButtonRow: {
+    display: 'flex',
+    gap: 10,
+  },
+
+  poiTagButton: {
+    padding: '10px 22px',
+    borderRadius: 99,
+    background: 'rgba(255,255,255,0.14)',
+    backdropFilter: 'blur(8px)',
+    border: '1.5px solid rgba(255,255,255,0.38)',
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
+
+  bottomSheet: (translateY, isAnimating) => ({
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    transform: `translateY(${translateY}px)`,
+    background: 'white',
+    borderRadius: '22px 22px 0 0',
+    boxShadow: '0 -6px 32px rgba(0,0,0,0.13)',
+    transition: isAnimating ? 'transform 0.3s cubic-bezier(0.32,0.72,0,1)' : 'none',
+    zIndex: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: '80dvh',
+  }),
+
+  sheetHandleArea: {
+    padding: '14px 0 8px',
+    cursor: 'grab',
+    touchAction: 'none',
+    flexShrink: 0,
+  },
+
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    background: '#d1d5db',
+    borderRadius: 2,
+    margin: '0 auto',
+  },
+
+  sheetContent: {
+    padding: '8px 24px max(24px, env(safe-area-inset-bottom))',
+    overflowY: 'auto',
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: 800,
+    color: '#0a0a0a',
+    marginBottom: 16,
+    letterSpacing: '-0.5px',
+    textAlign: 'center',
+  },
+
+  tagRow: {
+    display: 'flex',
+    gap: 8,
+    marginBottom: 20,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+
+  tag: {
+    padding: '6px 16px',
+    border: '1.5px solid #1d4ed8',
+    borderRadius: 16,
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#374151',
+  },
+
+  description: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: '#111827',
+    lineHeight: 1.6,
+    margin: '0 0 28px',
+    textAlign: 'center',
+  },
+
+  buttonRow: {
+    display: 'flex',
+    gap: 12,
+  },
+
+  startButton: {
+    flex: 1,
+    background: '#1d4ed8',
+    color: 'white',
+    padding: '16px',
+    borderRadius: 16,
+    fontSize: 16,
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    border: 'none',
+  },
+
+  archiveButton: {
+    width: 56,
+    height: 56,
+    background: '#f3f4f6',
+    borderRadius: 16,
+    fontSize: 22,
+    cursor: 'pointer',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+  },
 }

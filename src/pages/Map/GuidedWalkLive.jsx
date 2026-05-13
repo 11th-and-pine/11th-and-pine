@@ -11,17 +11,18 @@ const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 const DEFAULT_ROUTE_COLOR = '#5272FF'
 const WRONG_ROUTE_COLOR = '#ef4444'
 
-// Walk pacing — each "step" along the route advances every WALK_INTERVAL_MS.
-// POI audio windows (with current 8000ms):
-//   POI 1 (step 1) → POI 2 (step 3): 16s for Westlake Plaza audio
-//   POI 2 (step 3) → POI 3 (step 6): 24s for Pike/Pine audio
-//   POI 3 (step 6) → end       (step 7): 8s, but audio keeps playing past `done`
-// Bump this if your recordings are longer than the windows above.
-const WALK_INTERVAL_MS = 8000
-const CAMERA_MOVE_DURATION = 1200
-const CAMERA_IDLE_DURATION = 700
-const INITIAL_ZOOM = 15.5
+// GPS thresholds (feet). Tune after first field test.
+//   POI_TRIGGER_FT — within this many feet of a POI, its audio starts.
+//                    City GPS accuracy is ~16–50 ft, so don't go too low.
+//   OFF_ROUTE_FT   — farther than this from the route's nearest segment
+//                    triggers the off-route alert.
+//   ARRIVED_FT     — within this distance of the last route point ⇒ done.
+const POI_TRIGGER_FT = 50
+const OFF_ROUTE_FT = 80
+const ARRIVED_FT = 50
 
+const INITIAL_ZOOM = 16
+const FOLLOW_ZOOM = 17.5
 
 const WESTLAKE_ROUTE = [
   [47.61208726167953, -122.33701558200671], // Westlake Center
@@ -34,20 +35,10 @@ const WESTLAKE_ROUTE = [
   [47.61534637433494, -122.31998484534672], // Cal Anderson Park
 ]
 
-// ~10ft ≈ 0.000030 degrees latitude offset — walker drifts slightly off route
-const WRONG_PATH_ROUTE = [
-  [47.61208726167953, -122.33701558200671], // same start
-  [47.61215, -122.33680], // slight drift
-  [47.61240, -122.33590], // drifting further off
-  [47.61290, -122.33450], // clearly off route
-  [47.61320, -122.33350], // deep off route
-]
-
 const POIS = [
   {
     id: 1,
     position: [47.6120, -122.3358],
-    triggerStep: 1,
     audioUrl: '/audio/westlake-plaza.mp3',
     name: 'Westlake Plaza',
     title: 'Where the March Began',
@@ -56,7 +47,6 @@ const POIS = [
   {
     id: 2,
     position: [47.6136, -122.3318],
-    triggerStep: 3,
     audioUrl: '/audio/pike-pine.mp3',
     name: 'Pike/Pine Corridor',
     title: 'From Auto Row to Activism',
@@ -65,7 +55,6 @@ const POIS = [
   {
     id: 3,
     position: [47.6153, -122.3240],
-    triggerStep: 6,
     audioUrl: '/audio/cal-anderson.mp3',
     name: 'Cal Anderson Park',
     title: 'The Autonomous Zone',
@@ -135,13 +124,30 @@ function distanceFeet([lat1, lng1], [lat2, lng2]) {
   return earthRadiusFeet * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// Min distance from point to any segment on the route
+// Min distance from point to any vertex on the route. Good enough for
+// a coarse off-route check; for finer accuracy, do point-to-segment.
 function distanceToRoute(point, route) {
   let minDist = Infinity
-  for (let i = 0; i < route.length - 1; i++) {
+  for (let i = 0; i < route.length; i++) {
     minDist = Math.min(minDist, distanceFeet(point, route[i]))
   }
   return minDist
+}
+
+// Find the index of the route vertex closest to `point`. Used to draw
+// the "official" traveled portion of the planned route, alongside the
+// raw GPS trail.
+function nearestRouteIndex(point, route) {
+  let bestIdx = 0
+  let bestDist = Infinity
+  for (let i = 0; i < route.length; i++) {
+    const d = distanceFeet(point, route[i])
+    if (d < bestDist) {
+      bestDist = d
+      bestIdx = i
+    }
+  }
+  return bestIdx
 }
 
 // Error sound using Web Audio API
@@ -160,7 +166,6 @@ function playErrorSound() {
       osc.start(ctx.currentTime + start)
       osc.stop(ctx.currentTime + start + duration)
     }
-    // Descending alert tones
     playTone(880, 0, 0.18, 'square')
     playTone(660, 0.22, 0.18, 'square')
     playTone(440, 0.44, 0.28, 'square')
@@ -169,204 +174,182 @@ function playErrorSound() {
   }
 }
 
-export default function GuidedWalk() {
+export default function GuidedWalkLive() {
   const navigate = useNavigate()
   const location = useLocation()
   const mapRef = useRef()
-  const simTimer = useRef(null)
-  const wrongSimTimer = useRef(null)
   const audioRef = useRef(null)
   const playedPOIs = useRef(new Set())
+  const watchIdRef = useRef(null)
 
   const branchRoute = location.state ? location.state.route : null
   const route = branchRoute ? branchRoute.path : WESTLAKE_ROUTE
   const routeColor = branchRoute ? branchRoute.color : DEFAULT_ROUTE_COLOR
 
-  const [step, setStep] = useState(0)
-  const [simulating, setSimulating] = useState(false)
+  // Real GPS state
+  const [userLocation, setUserLocation] = useState(null)   // [lat, lng]
+  const [userHeading, setUserHeading] = useState(null)     // degrees, may be null
+  const [gpsTrail, setGpsTrail] = useState([])             // raw breadcrumbs
+  // Lazy initializer — checks browser capability at mount without needing
+  // to call setLocationError from inside an effect body.
+  const [locationError, setLocationError] = useState(() =>
+    typeof navigator !== 'undefined' && navigator.geolocation
+      ? null
+      : 'This browser does not support geolocation.'
+  )
+
   const [done, setDone] = useState(false)
   const [openPOI, setOpenPOI] = useState(null)
-
-  // Wrong path simulation state
-  const [wrongPathMode, setWrongPathMode] = useState(false)
-  const [wrongStep, setWrongStep] = useState(0)
   const [offRouteAlert, setOffRouteAlert] = useState(false)
   const [alertDismissed, setAlertDismissed] = useState(false)
 
-  // Audio player state
+  // Refs that mirror state so the watchPosition callback (a long-lived
+  // subscription set up once on mount) can read fresh values without
+  // re-creating the subscription every time the state changes.
+  const doneRef = useRef(false)
+  const alertDismissedRef = useRef(false)
+  const offRouteAlertRef = useRef(false)
+  useEffect(() => { doneRef.current = done }, [done])
+  useEffect(() => { alertDismissedRef.current = alertDismissed }, [alertDismissed])
+  useEffect(() => { offRouteAlertRef.current = offRouteAlert }, [offRouteAlert])
+
+  // Derived: is the user currently off-route? Computed every render, no state.
+  const offRoute = userLocation && !done
+    ? distanceToRoute(userLocation, route) > OFF_ROUTE_FT
+    : false
+
+  // Audio player state — identical to GuidedWalk.jsx
   const [audioPlaying, setAudioPlaying] = useState(false)
   const [audioProgress, setAudioProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
   const [audioCurrentTime, setAudioCurrentTime] = useState(0)
   const [currentAudioPOI, setCurrentAudioPOI] = useState(null)
 
-  const normalPoint = route[step] || route[route.length - 1] || WESTLAKE_ROUTE[0]
-  const wrongPoint = WRONG_PATH_ROUTE[Math.min(wrongStep, WRONG_PATH_ROUTE.length - 1)]
-  const currentPoint = wrongPathMode ? wrongPoint : normalPoint
+  const currentPoint = userLocation || route[0]
 
-  const traveled = wrongPathMode
-    ? WRONG_PATH_ROUTE.slice(0, wrongStep + 1)
-    : route.slice(0, step + 1)
+  // ──────────────────────────────────────────────────────────
+  // Geolocation: start watching on mount, stop on unmount.
+  // All position-driven side effects (POI trigger, off-route alert,
+  // arrival) live inside the watchPosition callback so setState happens
+  // in a subscription callback, not in an effect body.
+  // ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!navigator.geolocation) return  // locationError set via initializer
 
-  // Trigger POI audio when the walker arrives at a POI's step.
-  // Each POI fires at most once per route (tracked in playedPOIs) so
-  // re-stepping or jitter won't replay the same clip. This is a plain
-  // function — it's called from the simulation interval callback below.
-  const triggerPOIAudioForStep = (currentStep) => {
-    const poi = POIS.find(p => p.triggerStep === currentStep)
-    if (!poi || playedPOIs.current.has(poi.id)) return
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      pos => {
+        const next = [pos.coords.latitude, pos.coords.longitude]
+        setUserLocation(next)
+        if (typeof pos.coords.heading === 'number' && !isNaN(pos.coords.heading)) {
+          setUserHeading(pos.coords.heading)
+        }
+        setLocationError(null)
 
-    playedPOIs.current.add(poi.id)
-    setCurrentAudioPOI(poi)
+        // Append to trail, but skip jitter (< 5 ft from last point)
+        setGpsTrail(prev => {
+          if (prev.length === 0) return [next]
+          const last = prev[prev.length - 1]
+          if (distanceFeet(last, next) < 5) return prev
+          return [...prev, next]
+        })
 
-    const a = audioRef.current
-    if (!a) return
+        // ── POI audio trigger by proximity ──
+        const poi = POIS.find(p =>
+          !playedPOIs.current.has(p.id) &&
+          distanceFeet(next, p.position) < POI_TRIGGER_FT
+        )
+        if (poi) {
+          playedPOIs.current.add(poi.id)
+          setCurrentAudioPOI(poi)
+          const a = audioRef.current
+          if (a) {
+            a.src = poi.audioUrl
+            a.currentTime = 0
+            a.play()
+              .then(() => setAudioPlaying(true))
+              .catch(() => setAudioPlaying(false))
+          }
+        }
 
-    a.src = poi.audioUrl
-    a.currentTime = 0
-    a.play()
-      .then(() => setAudioPlaying(true))
-      .catch(() => {
-        // Browser blocked autoplay (no user gesture yet) — leave paused,
-        // user can hit ▶ on the audio bar to start.
-        setAudioPlaying(false)
-      })
-  }
+        // ── Arrival detection ──
+        if (!doneRef.current) {
+          const endpoint = route[route.length - 1]
+          if (distanceFeet(next, endpoint) < ARRIVED_FT) {
+            setDone(true)
+          }
+        }
 
-  // Sync external audioPlaying state with the actual <audio> element.
-  // (Lets the audio bar's ▶/⏸ button drive playback.)
+        // ── Off-route alert ──
+        if (!doneRef.current) {
+          const isOff = distanceToRoute(next, route) > OFF_ROUTE_FT
+          if (isOff && !alertDismissedRef.current && !offRouteAlertRef.current) {
+            setOffRouteAlert(true)
+            if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300])
+            playErrorSound()
+          }
+          if (!isOff && alertDismissedRef.current) {
+            setAlertDismissed(false)
+          }
+        }
+      },
+      err => {
+        setLocationError(err.message || 'Could not get your location.')
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 15000,
+      }
+    )
+
+    return () => {
+      if (watchIdRef.current != null) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+        watchIdRef.current = null
+      }
+    }
+  }, [route])
+
+  // Sync audioPlaying state with the actual <audio> element (for the ▶/⏸ button)
   useEffect(() => {
     const a = audioRef.current
     if (!a || !a.src) return
-
-    if (audioPlaying) {
-      a.play().catch(() => setAudioPlaying(false))
-    } else {
-      a.pause()
-    }
+    if (audioPlaying) a.play().catch(() => setAudioPlaying(false))
+    else a.pause()
   }, [audioPlaying])
 
-
-  // Camera
+  // ──────────────────────────────────────────────────────────
+  // Camera follows the user
+  // ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!mapRef.current || !currentPoint) {
-      return
+    if (!mapRef.current || !userLocation) return
+
+    // Use device heading if we have it, otherwise infer from last segment
+    let bearing = userHeading
+    if (bearing == null && gpsTrail.length >= 2) {
+      bearing = calcBearing(
+        gpsTrail[gpsTrail.length - 2],
+        gpsTrail[gpsTrail.length - 1],
+      )
     }
 
-    const isMoving = simulating || wrongPathMode
+    mapRef.current.easeTo({
+      center: toLngLat(userLocation),
+      zoom: FOLLOW_ZOOM,
+      pitch: 50,
+      bearing: bearing ?? mapRef.current.getBearing?.() ?? 0,
+      duration: 1200,
+    })
+  }, [userLocation, userHeading, gpsTrail])
 
-    if (isMoving) {
-      const currentRoute = wrongPathMode ? WRONG_PATH_ROUTE : route
-      const currentStep = wrongPathMode ? wrongStep : step
-      const nextIdx = Math.min(currentStep + 1, currentRoute.length - 1)
-
-      const bearing = currentStep < currentRoute.length - 1
-        ? calcBearing(currentRoute[currentStep], currentRoute[nextIdx])
-        : mapRef.current.getBearing?.() ?? 0
-
-      mapRef.current.easeTo({
-        center: toLngLat(currentPoint),
-        zoom: 17.5,
-        pitch: 55,
-        bearing,
-        duration: 1200,
-      })
-    } else {
-      mapRef.current.easeTo({
-        center: toLngLat(currentPoint),
-        zoom: 15.5,
-        pitch: 0,
-        bearing: 0,
-        duration: 700,
-      })
-    }
-  }, [step, wrongStep, simulating, wrongPathMode, route, currentPoint])
-
-  // Normal walk simulation. Uses a ref to track the current step so the
-  // setInterval callback can read it without going through setStep's
-  // updater (which is supposed to be pure — side effects belong here in
-  // the subscription callback per React 19 hook rules).
-  const stepRef = useRef(0)
-  useEffect(() => {
-    stepRef.current = step
-  }, [step])
-
-  useEffect(() => {
-    if (simulating && !done && !wrongPathMode) {
-      simTimer.current = setInterval(() => {
-        const next = Math.min(stepRef.current + 1, route.length - 1)
-        stepRef.current = next
-        setStep(next)
-
-        triggerPOIAudioForStep(next)
-
-        if (next >= route.length - 1) {
-          setSimulating(false)
-          setDone(true)
-        }
-      }, WALK_INTERVAL_MS)
-    } else {
-      clearInterval(simTimer.current)
-      simTimer.current = null
-    }
-
-    return () => {
-      clearInterval(simTimer.current)
-      simTimer.current = null
-    }
-  }, [simulating, done, wrongPathMode, route])
-
-  // Wrong path simulation
-  useEffect(() => {
-    if (wrongPathMode) {
-      wrongSimTimer.current = setInterval(() => {
-        setWrongStep(prev => {
-          const next = prev + 1
-
-          if (next >= WRONG_PATH_ROUTE.length) {
-            clearInterval(wrongSimTimer.current)
-            return prev
-          }
-
-          const newPos = WRONG_PATH_ROUTE[next]
-          const distFt = distanceToRoute(newPos, WESTLAKE_ROUTE)
-
-          if (distFt > 15 && !alertDismissed) {
-            setOffRouteAlert(true)
-
-            if (navigator.vibrate) {
-              navigator.vibrate([300, 150, 300, 150, 300])
-            }
-
-            playErrorSound()
-          }
-
-          return next
-        })
-      }, WALK_INTERVAL_MS)
-    } else {
-      clearInterval(wrongSimTimer.current)
-    }
-
-    return () => clearInterval(wrongSimTimer.current)
-  }, [wrongPathMode, alertDismissed])
-
-  // Reset state when the route changes — using the "prev prop" pattern
-  // (https://react.dev/learn/you-might-not-need-an-effect#resetting-all-state-when-a-prop-changes)
-  // instead of an Effect with setState. Timer cleanup is handled by the existing
-  // simulation Effects via their deps (`simulating`, `wrongPathMode`, `route`).
+  // Reset state when route changes (same pattern as GuidedWalk.jsx)
   const [prevRoute, setPrevRoute] = useState(route)
   if (prevRoute !== route) {
     setPrevRoute(route)
-    setStep(0)
-    setSimulating(false)
     setDone(false)
-    setWrongPathMode(false)
     setOffRouteAlert(false)
     setAlertDismissed(false)
-    setWrongStep(0)
-    // Reset audio state — actual ref + <audio> element cleanup happens in
-    // the effect below (refs can't be touched during render).
+    setGpsTrail([])
     setCurrentAudioPOI(null)
     setAudioPlaying(false)
     setAudioProgress(0)
@@ -374,7 +357,7 @@ export default function GuidedWalk() {
     setAudioDuration(0)
   }
 
-  // Clear played-POI tracking and reset the <audio> element when the route changes.
+  // Clear played-POI tracking and reset the <audio> element on route change.
   useEffect(() => {
     playedPOIs.current.clear()
     const a = audioRef.current
@@ -385,47 +368,23 @@ export default function GuidedWalk() {
     }
   }, [route])
 
-
-  function startWrongPath() {
-    setSimulating(false)
-    setDone(false)
-    setOffRouteAlert(false)
-    setAlertDismissed(false)
-    setWrongStep(0)
-
-    clearInterval(simTimer.current)
-    clearInterval(wrongSimTimer.current)
-
-    setTimeout(() => setWrongPathMode(true), 300)
-  }
-
-  function stopWrongPath() {
-    setWrongPathMode(false)
-    setOffRouteAlert(false)
-    setAlertDismissed(false)
-    setWrongStep(0)
-
-    clearInterval(wrongSimTimer.current)
-  }
-
   function dismissOffRouteAlert() {
     setOffRouteAlert(false)
     setAlertDismissed(true)
   }
 
-  function toggleSimulation() {
-    // Audio playback is now driven by POI triggers, not by simulation start/stop.
-    // Pausing the simulation also pauses any in-flight audio so the two stay in sync.
-    setSimulating(prev => {
-      const next = !prev
-      if (!next) setAudioPlaying(false)
-      return next
-    })
-  }
-
   function closePOI() {
     setOpenPOI(null)
   }
+
+  // For the on-map "traveled" line, prefer the actual GPS trail if we have
+  // enough points; otherwise fall back to a slice of the planned route up
+  // to the user's nearest vertex (looks cleaner before GPS warms up).
+  const traveled = gpsTrail.length >= 2
+    ? gpsTrail
+    : userLocation
+      ? route.slice(0, nearestRouteIndex(userLocation, route) + 1)
+      : []
 
   return (
     <div style={styles.page}>
@@ -441,37 +400,37 @@ export default function GuidedWalk() {
       >
         {/* Full route — faint preview */}
         <Source id="full-route" type="geojson" data={makeLine(route)}>
-          <Layer 
-            id="full-route-line" 
+          <Layer
+            id="full-route-line"
             type="line"
             layout={styles.routeLineLayout}
             paint={styles.fullRoutePaint(routeColor)}
           />
         </Source>
 
-        {/* Traveled path */}
+        {/* Traveled path (real GPS trail) */}
         <Source id="traveled" type="geojson" data={makeLine(traveled)}>
-          <Layer 
-            id="traveled-line" 
+          <Layer
+            id="traveled-line"
             type="line"
             layout={styles.routeLineLayout}
-            paint={styles.traveledRoutePaint(routeColor, wrongPathMode)}
+            paint={styles.traveledRoutePaint(routeColor, offRoute)}
           />
         </Source>
 
         {/* Start marker */}
-        <Marker 
-          longitude={toLngLat(route[0])[0]} 
-          latitude={toLngLat(route[0])[1]} 
+        <Marker
+          longitude={toLngLat(route[0])[0]}
+          latitude={toLngLat(route[0])[1]}
           anchor="center"
         >
           <div style={styles.routeMarker(routeColor)} />
         </Marker>
 
         {/* End marker */}
-        <Marker 
-          longitude={toLngLat(route[route.length - 1])[0]} 
-          latitude={toLngLat(route[route.length - 1])[1]} 
+        <Marker
+          longitude={toLngLat(route[route.length - 1])[0]}
+          latitude={toLngLat(route[route.length - 1])[1]}
           anchor="center"
         >
           <div style={styles.routeMarker(routeColor)} />
@@ -491,16 +450,16 @@ export default function GuidedWalk() {
           </Marker>
         ))}
 
-        {/* Walker dot */}
-        {!done && (
+        {/* Walker dot — only render once we have a real GPS fix */}
+        {!done && userLocation && (
           <Marker
             longitude={toLngLat(currentPoint)[0]}
             latitude={toLngLat(currentPoint)[1]}
             anchor="center"
           >
             <div style={styles.walkerWrapper}>
-              <div style={styles.walkerPulse(routeColor, wrongPathMode)} />
-              <div style={styles.walkerDot(routeColor, wrongPathMode)} />
+              <div style={styles.walkerPulse(routeColor, offRoute)} />
+              <div style={styles.walkerDot(routeColor, offRoute)} />
             </div>
           </Marker>
         )}
@@ -515,47 +474,33 @@ export default function GuidedWalk() {
             direction="next"
             onClick={() => navigate('/map/explore')}
           />
-
         </div>
       </div>
 
-      {/* Simulate button */}
-      {!done && !wrongPathMode && (
-        <div style={styles.simButtonGroup(200)}>
-          <button onClick={toggleSimulation} style={styles.simButton}>
-            {simulating ? '⏸' : '▶'}
-          </button>
-
-          <span style={styles.simLabel}>
-            Walking Simulation
-          </span>
+      {/* GPS status pill (top center) — only shown until first fix */}
+      {!userLocation && !locationError && (
+        <div style={styles.gpsStatusPill}>
+          Locating you…
         </div>
       )}
 
-      {/* Wrong Path button */}
-      {!done && (
-        <div style={styles.simButtonGroup(wrongPathMode ? 200 : 290)}>
-          {wrongPathMode ? (
-            <>
-              <button onClick={stopWrongPath} style={styles.stopWrongPathButton}>
-                ⏹
-              </button>
-
-              <span style={styles.stopWrongPathLabel}>
-                Stop Test
-              </span>
-            </>
-          ) : (
-            <>
-              <button onClick={startWrongPath} style={styles.wrongPathButton}>
-                ⚠️
-              </button>
-
-              <span style={styles.wrongPathLabel}>
-                Wrong Path Simulation
-              </span>
-            </>
-          )}
+      {/* Permission / GPS error overlay */}
+      {locationError && (
+        <div style={styles.gpsErrorOverlay}>
+          <div style={styles.gpsErrorCard}>
+            <div style={styles.gpsErrorTitle}>Location unavailable</div>
+            <div style={styles.gpsErrorBody}>
+              {locationError}
+              <br /><br />
+              Make sure location is enabled for this site, then refresh.
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              style={styles.gpsErrorButton}
+            >
+              Try again
+            </button>
+          </div>
         </div>
       )}
 
@@ -587,7 +532,7 @@ export default function GuidedWalk() {
             <button
               onClick={() => {
                 const a = audioRef.current
-                if (!a || !a.src) return  // No POI has triggered yet
+                if (!a || !a.src) return
                 if (a.paused) a.play().catch(() => {})
                 else a.pause()
               }}
@@ -625,16 +570,13 @@ export default function GuidedWalk() {
         </div>
       )}
 
+      {/* Off-route alert */}
       {offRouteAlert && (
         <div style={styles.alertOverlay}>
-          {/* Blurred map tint */}
           <div style={styles.alertBackdrop} />
 
-          {/* Card */}
           <div style={styles.alertCard}>
-            {/* Pulsing red icon circle */}
             <div style={styles.alertIconCircle}>
-              {/* Turn-back arrow icon matching the mockup */}
               <svg
                 width="32"
                 height="32"
@@ -653,17 +595,14 @@ export default function GuidedWalk() {
               </svg>
             </div>
 
-            {/* Title */}
             <div style={styles.alertTitle}>
               Off Route Alert
             </div>
 
-            {/* Subtitle */}
             <div style={styles.alertSubtitle}>
               Please return to the original route.
             </div>
 
-            {/* Dismiss button */}
             <button onClick={dismissOffRouteAlert} style={styles.alertButton}>
               Got it
             </button>
@@ -739,12 +678,10 @@ export default function GuidedWalk() {
       {/* Branch route complete */}
       {done && branchRoute && (
         <div style={styles.branchCompleteOverlay}>
-          {/* Top "Arrived" bar */}
           <div style={styles.arrivedBar}>
             Arrived
           </div>
 
-          {/* Centered content */}
           <div style={styles.branchCompleteContent}>
             <div style={styles.completePill}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -814,11 +751,6 @@ const animationStyles = `
     100% { transform: scale(1); opacity: 0; }
   }
 
-  @keyframes slideDown {
-    from { transform: translateY(-16px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
   @keyframes alertSlideUp {
     from { transform: translateY(40px) scale(0.94); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }
@@ -866,8 +798,8 @@ const styles = {
     'line-opacity': 0.25,
   }),
 
-  traveledRoutePaint: (color, wrongPathMode) => ({
-    'line-color': wrongPathMode ? WRONG_ROUTE_COLOR : color,
+  traveledRoutePaint: (color, offRoute) => ({
+    'line-color': offRoute ? WRONG_ROUTE_COLOR : color,
     'line-width': 5,
     'line-opacity': 0.9,
   }),
@@ -894,23 +826,23 @@ const styles = {
     justifyContent: 'center',
   },
 
-  walkerPulse: (routeColor, wrongPathMode) => ({
+  walkerPulse: (routeColor, offRoute) => ({
     position: 'absolute',
     inset: 0,
-    background: wrongPathMode ? 'rgba(239,68,68,0.3)' : `${routeColor}33`,
+    background: offRoute ? 'rgba(239,68,68,0.3)' : `${routeColor}33`,
     borderRadius: '50%',
-    animation: wrongPathMode
+    animation: offRoute
       ? 'wrongWalkerPulse 1.2s ease-out infinite'
       : 'walkerPulse 1.8s ease-out infinite',
   }),
 
-  walkerDot: (routeColor, wrongPathMode) => ({
+  walkerDot: (routeColor, offRoute) => ({
     width: 14,
     height: 14,
-    background: wrongPathMode ? WRONG_ROUTE_COLOR : routeColor,
+    background: offRoute ? WRONG_ROUTE_COLOR : routeColor,
     border: '3px solid white',
     borderRadius: '50%',
-    boxShadow: wrongPathMode
+    boxShadow: offRoute
       ? '0 2px 10px rgba(239,68,68,0.7)'
       : `0 2px 10px ${routeColor}b3`,
   }),
@@ -930,94 +862,66 @@ const styles = {
     gap: 10,
   },
 
-  simButtonGroup: bottom => ({
+  gpsStatusPill: {
     position: 'absolute',
-    right: 14,
-    bottom,
-    zIndex: 1000,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 6,
-    transition: 'bottom 0.3s ease',
-  }),
-
-  simButton: {
-    width: 50,
-    height: 50,
-    borderRadius: '50%',
-    background: '#7D92A7',
-    backdropFilter: 'blur(8px)',
+    top: 56,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 1100,
+    background: 'rgba(0,0,0,0.7)',
     color: 'white',
-    fontSize: 18,
-    cursor: 'pointer',
-    boxShadow: '0 3px 14px rgba(0,0,0,0.45)',
+    fontSize: 12,
+    fontWeight: 600,
+    padding: '6px 14px',
+    borderRadius: 999,
+    backdropFilter: 'blur(8px)',
+  },
+
+  gpsErrorOverlay: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 4000,
+    background: 'rgba(0,0,0,0.55)',
+    backdropFilter: 'blur(6px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: 'none',
+    padding: '0 32px',
   },
 
-  simLabel: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 600,
-    background: 'rgba(0,0,0,0.45)',
-    padding: '2px 7px',
-    borderRadius: 8,
-    maxWidth: 64,
-  },
-
-  wrongPathButton: {
-    width: 50,
-    height: 50,
-    borderRadius: '50%',
-    background: 'rgba(239,68,68,0.85)',
-    backdropFilter: 'blur(8px)',
-    color: 'white',
-    fontSize: 20,
-    cursor: 'pointer',
-    boxShadow: '0 3px 14px rgba(239,68,68,0.45)',
-    border: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  wrongPathLabel: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 600,
-    background: 'rgba(0,0,0,0.45)',
-    padding: '2px 7px',
-    borderRadius: 8,
+  gpsErrorCard: {
+    width: 'min(340px, 86vw)',
+    background: 'white',
+    borderRadius: 24,
+    padding: '32px 28px 24px',
     textAlign: 'center',
-    maxWidth: 64,
+    boxShadow: '0 16px 48px rgba(0,0,0,0.25)',
   },
 
-  stopWrongPathButton: {
-    width: 50,
-    height: 50,
-    borderRadius: '50%',
-    background: '#ef4444',
+  gpsErrorTitle: {
+    fontSize: 20,
+    fontWeight: 800,
+    color: '#0a0a0a',
+    marginBottom: 12,
+  },
+
+  gpsErrorBody: {
+    fontSize: 14,
+    color: '#4b5563',
+    lineHeight: 1.6,
+    marginBottom: 24,
+  },
+
+  gpsErrorButton: {
+    width: '100%',
+    padding: '14px',
+    background: '#1d4ed8',
     color: 'white',
-    fontSize: 18,
-    cursor: 'pointer',
-    boxShadow: '0 3px 14px rgba(239,68,68,0.55)',
+    fontSize: 15,
+    fontWeight: 700,
+    borderRadius: 999,
     border: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    animation: 'alertPulse 1.8s infinite',
-  },
-
-  stopWrongPathLabel: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 600,
-    background: 'rgba(220,38,38,0.8)',
-    padding: '2px 7px',
-    borderRadius: 8,
+    cursor: 'pointer',
   },
 
   audioBar: {

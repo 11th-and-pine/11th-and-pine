@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPerspectives } from '../../services/dataService'
+import NavCircleButton from '../../components/NavCircleButton'
 
 const LABELS = [
   {

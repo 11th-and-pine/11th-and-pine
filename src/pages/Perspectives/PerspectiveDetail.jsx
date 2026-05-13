@@ -1,8 +1,8 @@
-import { React } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Map, { Marker, Source, Layer } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getPerspectiveById } from '../../services/dataService'
+import NavCircleButton from '../../components/NavCircleButton'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 
@@ -41,11 +41,10 @@ function PerspectiveDetail() {
     return (
       <div style={styles.page}>
         <div style={styles.notFoundWrap}>
-          <button style={styles.backCircleFallback} onClick={() => navigate('/perspectives')} aria-label="Back">
-            <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          <NavCircleButton
+            onClick={() => navigate('/perspectives')}
+            style={styles.backCircleFallback}
+          />
           <h1 style={styles.notFoundTitle}>Perspective not found</h1>
         </div>
       </div>
@@ -63,11 +62,10 @@ function PerspectiveDetail() {
   return (
     <div style={styles.page}>
       {/* Floating back button — lives outside the scroll area so it stays pinned while content scrolls */}
-      <button style={styles.backCircle} onClick={() => navigate('/perspectives')} aria-label="Back">
-        <svg width="16" height="18" viewBox="0 0 16 16" fill="none">
-          <path d="M10 3L5 8L10 13" stroke="#111827" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>
+      <NavCircleButton
+        onClick={() => navigate('/perspectives')}
+        style={styles.backCircle}
+      />
 
       <div style={styles.scrollArea}>
         <div style={styles.hero}>
@@ -217,13 +215,6 @@ const styles = {
     position: 'absolute',
     top: '20px',
     left: '20px',
-    width: '39px',
-    height: '39px',
-    borderRadius: '50%',
-    border: 'none',
-    backgroundColor: '#ffffff',
-    boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
-    padding: 0,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -374,17 +365,6 @@ const styles = {
     padding: '24px',
   },
   backCircleFallback: {
-    width: '39px',
-    height: '39px',
-    borderRadius: '50%',
-    border: 'none',
-    backgroundColor: '#ffffff',
-    boxShadow: '0 0 0 4px rgba(0,0,0,0.06)',
-    padding: 0,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: '20px',
   },
   notFoundTitle: {
