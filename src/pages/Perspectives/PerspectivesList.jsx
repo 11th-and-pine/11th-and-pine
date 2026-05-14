@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPerspectives } from '../../services/dataService'
-import NavCircleButton from '../../components/NavCircleButton'
+import BottomNav from '../../components/BottomNav'
+import perspectiveWestlakeIcon from '../../assets/images/perspective-westlake-icon.png'
+import perspectiveChopIcon from '../../assets/images/perspective-chop-icon.svg'
+import perspectiveLabelIcon from '../../assets/images/perspective-label-icon.png'
 
 const LABELS = [
   {
@@ -38,7 +41,7 @@ function ChevronIcon({ expanded }) {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path
           d="M6 9L12 15L18 9"
-          stroke="#0054d8"
+          stroke="#C53E2C"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -87,7 +90,12 @@ function PerspectivesList() {
             }}
             onClick={() => handleTabChange('westlake')}
           >
-            ♘ Westlake
+            <img
+              src={perspectiveWestlakeIcon}
+              alt=""
+              style={styles.westlakeTabIcon}
+            />
+            <span>Westlake</span>
           </button>
 
           <button
@@ -97,7 +105,12 @@ function PerspectivesList() {
             }}
             onClick={() => handleTabChange('capital')}
           >
-            ☼ Capital Hill
+            <img
+              src={perspectiveChopIcon}
+              alt=""
+              style={styles.chopTabIcon}
+            />
+            <span>Capitol Hill</span>
           </button>
 
           <button
@@ -107,7 +120,12 @@ function PerspectivesList() {
             }}
             onClick={() => handleTabChange('labels')}
           >
-            📍 Labels
+            <img
+              src={perspectiveLabelIcon}
+              alt=""
+              style={styles.labelTabIcon}
+            />
+            <span>Labels</span>
           </button>
         </div>
 
@@ -152,17 +170,7 @@ function PerspectivesList() {
         </div>
       </div>
 
-      <div style={styles.bottomNav}>
-        <button style={styles.navButton} onClick={() => navigate('/map/overview')}>
-          <div style={styles.navIconInactive}>⌂</div>
-          <span style={styles.navTextInactive}>Home</span>
-        </button>
-
-        <button style={styles.navButton} onClick={() => navigate('/perspectives')}>
-          <div style={styles.navIconActive}>▰</div>
-          <span style={styles.navTextActive}>Library</span>
-        </button>
-      </div>
+      <BottomNav active="library" className="library-bottom-nav" />
     </div>
   )
 }
@@ -249,7 +257,7 @@ function LabelCard({ label, expanded, onToggle }) {
 const styles = {
   page: {
     height: '100%',
-    backgroundColor: '#f4f6f8',
+    backgroundColor: '#F3F3F1',
     display: 'flex',
     flexDirection: 'column',
     color: '#111827',
@@ -263,25 +271,48 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr 1fr',
     padding: '58px 28px 0',
-    backgroundColor: '#f4f6f8',
+    backgroundColor: '#F3F3F1',
   },
   tab: {
     padding: '0 0 14px',
     border: 'none',
-    borderBottom: '1.5px solid #c7dcfb',
+    borderBottom: '1.5px solid rgba(197, 62, 44, 0.35)',
     background: 'transparent',
-    color: '#b8d4fb',
+    color: 'rgba(197, 62, 44, 0.5)',
     fontSize: '14px',
     fontWeight: 700,
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
   },
   activeTab: {
-    color: '#0054d8',
-    borderBottom: '3px solid #0054d8',
+    color: '#C53E2C',
+    borderBottom: '3px solid #C53E2C',
   },
   activeTabLabel: {
-    color: '#0054d8',
-    borderBottom: '3px solid #0054d8',
+    color: '#C53E2C',
+    borderBottom: '3px solid #C53E2C',
+  },
+  westlakeTabIcon: {
+    width: '45px',
+    height: '30px',
+    aspectRatio: '3 / 2',
+    objectFit: 'cover',
+    flexShrink: 0,
+  },
+  chopTabIcon: {
+    width: '12px',
+    height: '12px',
+    flexShrink: 0,
+  },
+  labelTabIcon: {
+    width: '30px',
+    height: '20px',
+    aspectRatio: '3 / 2',
+    objectFit: 'cover',
+    flexShrink: 0,
   },
   content: {
     padding: '28px 18px 110px',
@@ -358,7 +389,7 @@ const styles = {
   progressPercent: {
     fontSize: '12px',
     fontWeight: 700,
-    color: '#0054d8',
+    color: '#111',
   },
   progressTrack: {
     width: '100%',
@@ -369,7 +400,7 @@ const styles = {
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#0054d8',
+    backgroundColor: '#EED05D',
     borderRadius: '999px',
   },
   buttonRow: {
@@ -381,7 +412,7 @@ const styles = {
     height: '34px',
     border: 'none',
     borderRadius: '8px',
-    backgroundColor: '#064be8',
+    backgroundColor: '#C53E2C',
     color: '#fff',
     fontSize: '12px',
     cursor: 'pointer',
@@ -453,44 +484,6 @@ const styles = {
     height: '100%',
     objectFit: 'cover',
     display: 'block',
-  },
-  bottomNav: {
-    height: '76px',
-    borderTop: '1px solid #e1e5ea',
-    backgroundColor: '#f4f6f8',
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    flexShrink: 0,
-  },
-  navButton: {
-    border: 'none',
-    background: 'transparent',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-  },
-  navIconInactive: {
-    fontSize: '26px',
-    color: '#b7d5ff',
-    lineHeight: 1,
-  },
-  navTextInactive: {
-    fontSize: '11px',
-    color: '#b7d5ff',
-    marginTop: '4px',
-  },
-  navIconActive: {
-    fontSize: '26px',
-    color: '#0054ff',
-    lineHeight: 1,
-    transform: 'rotate(-16deg)',
-  },
-  navTextActive: {
-    fontSize: '11px',
-    color: '#0054ff',
-    marginTop: '4px',
   },
 }
 

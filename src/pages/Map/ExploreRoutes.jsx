@@ -15,7 +15,7 @@ const CHOP_ROUTES = [
     title: "Alex's Route",
     role: 'Community Organizer',
     desc: 'Follow the path of the first organizers on the ground.',
-    color: '#f59e0b',
+    color: '#EED05D',
     path: [
       [47.61534637433494, -122.31998484534672],
       [47.61537792391303, -122.31834587334546],

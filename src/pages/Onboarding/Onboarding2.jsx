@@ -81,7 +81,7 @@ function Onboarding2() {
 
           <div className="flex justify-center gap-2">
             <div className="w-6 h-1.5 rounded-full bg-gray-300" />
-            <div className="w-12 h-1.5 rounded-full bg-sky-400" />
+            <div className="w-12 h-1.5 rounded-full active-onboarding-dot" />
             <div className="w-6 h-1.5 rounded-full bg-gray-300" />
           </div>
         </div>
@@ -94,7 +94,10 @@ function Onboarding2() {
             Continue
           </button>
 
-          <p>
+          <p
+            onClick={() => navigate('')}
+            className="onboarding-privacy"
+          >
             Privacy Policy
           </p>
         </div>

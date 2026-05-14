@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Map, { Source, Layer, Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import NavCircleButton from '../../components/NavCircleButton'
@@ -53,14 +53,14 @@ function circlePolygon([lat, lng], radiusM, steps = 64) {
   }
 }
 
-function makeNavLine(userPos) {
+function makeNavLine(userPos, startPos) {
   return {
     type: 'Feature',
     geometry: {
       type: 'LineString',
       coordinates: [
         toLngLat(userPos),
-        toLngLat(START_POS),
+        toLngLat(startPos),
       ],
     },
   }
@@ -84,7 +84,10 @@ function distanceKm([lat1, lon1], [lat2, lon2]) {
 
 export default function NavigateToStart() {
   const navigate = useNavigate()
+  const location = useLocation()
   const mapRef = useRef()
+  const route = location.state?.route
+  const startPos = route?.path?.[0] || START_POS
 
   const [userPos, setUserPos] = useState(null)
   // Lazy-initialize so we don't need a setState-in-effect when the API is missing.
@@ -92,10 +95,10 @@ export default function NavigateToStart() {
     () => typeof navigator !== 'undefined' && !navigator.geolocation,
   )
 
-  const dist = userPos ? distanceKm(userPos, START_POS) : null
+  const dist = userPos ? distanceKm(userPos, startPos) : null
   const atStart = dist !== null && dist < AT_START_DISTANCE_KM
 
-  const mapCenter = userPos ? getMidpoint(userPos, START_POS) : START_POS
+  const mapCenter = userPos ? getMidpoint(userPos, startPos) : startPos
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -119,14 +122,14 @@ export default function NavigateToStart() {
       return
     }
 
-    const midpoint = getMidpoint(userPos, START_POS)
+    const midpoint = getMidpoint(userPos, startPos)
 
     mapRef.current?.flyTo({
       center: toLngLat(midpoint),
       zoom: INITIAL_ZOOM,
       duration: 600,
     })
-  }, [userPos])
+  }, [userPos, startPos])
 
   return (
     <div style={styles.page}>
@@ -142,7 +145,7 @@ export default function NavigateToStart() {
       >
         {/* Dashed line from user to start */}
         {userPos && (
-          <Source id="nav-line" type="geojson" data={makeNavLine(userPos)}>
+          <Source id="nav-line" type="geojson" data={makeNavLine(userPos, startPos)}>
             <Layer
               id="nav-line-layer"
               type="line"
@@ -156,7 +159,7 @@ export default function NavigateToStart() {
         <Source
           id="start-circle"
           type="geojson"
-          data={circlePolygon(START_POS, START_RADIUS_METERS)}
+          data={circlePolygon(startPos, START_RADIUS_METERS)}
         >
           <Layer
             id="start-circle-fill"
@@ -187,8 +190,8 @@ export default function NavigateToStart() {
 
         {/* Start marker */}
         <Marker
-          longitude={START_POS[1]}
-          latitude={START_POS[0]}
+          longitude={startPos[1]}
+          latitude={startPos[0]}
           anchor="center"
         >
           <div style={styles.startMarker} />
@@ -237,13 +240,15 @@ export default function NavigateToStart() {
             </div>
 
             <div style={styles.successSubtitle}>
-              Westlake Center — ready to begin
+              {route ? `${route.title || 'Selected route'} — ready to begin` : 'Westlake Center — ready to begin'}
             </div>
           </div>
         )}
 
-        <button 
-          onClick={() => navigate('/map/walking')} 
+        <button
+          onClick={() => navigate('/map/walking', {
+            state: route ? { route } : undefined,
+          })}
           style={styles.startButton}
         >
           {atStart ? 'Begin Walk →' : 'Begin Walk Anyway →'}
@@ -361,7 +366,7 @@ const styles = {
     width: 7,
     height: 7,
     borderRadius: '50%',
-    background: userPos ? '#22c55e' : '#f59e0b',
+    background: userPos ? '#22c55e' : '#EED05D',
   }),
 
   gpsStatusText: {
@@ -424,13 +429,14 @@ const styles = {
 
   startButton: {
     width: '100%',
-    background: '#84C4FF',
-    color: '#0a0a0a',
+    background: '#C53E2C',
+    color: '#fff',
     padding: '15px',
-    borderRadius: 16,
+    borderRadius: 9999,
     fontSize: 16,
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: 'pointer',
     border: 'none',
+    boxShadow: '0 8px 24px rgba(197, 62, 44, 0.28)',
   },
 }

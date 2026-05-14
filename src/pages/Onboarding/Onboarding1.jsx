@@ -75,7 +75,7 @@ function Onboarding1() {
           </p>
 
           <div className="flex justify-start gap-2">
-            <div className="w-12 h-1.5 rounded-full bg-sky-400" />
+            <div className="w-12 h-1.5 rounded-full active-onboarding-dot" />
             <div className="w-6 h-1.5 rounded-full bg-gray-300" />
             <div className="w-6 h-1.5 rounded-full bg-gray-300" />
           </div>

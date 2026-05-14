@@ -200,6 +200,7 @@ export default function GuidedWalkLive() {
 
   const [done, setDone] = useState(false)
   const [openPOI, setOpenPOI] = useState(null)
+  const [exitPromptOpen, setExitPromptOpen] = useState(false)
   const [offRouteAlert, setOffRouteAlert] = useState(false)
   const [alertDismissed, setAlertDismissed] = useState(false)
 
@@ -224,6 +225,7 @@ export default function GuidedWalkLive() {
   const [audioDuration, setAudioDuration] = useState(0)
   const [audioCurrentTime, setAudioCurrentTime] = useState(0)
   const [currentAudioPOI, setCurrentAudioPOI] = useState(null)
+  const [audioError, setAudioError] = useState(false)
 
   const currentPoint = userLocation || route[0]
 
@@ -261,6 +263,10 @@ export default function GuidedWalkLive() {
         if (poi) {
           playedPOIs.current.add(poi.id)
           setCurrentAudioPOI(poi)
+          setAudioError(false)
+          setAudioProgress(0)
+          setAudioCurrentTime(0)
+          setAudioDuration(0)
           const a = audioRef.current
           if (a) {
             a.src = poi.audioUrl
@@ -355,6 +361,7 @@ export default function GuidedWalkLive() {
     setAudioProgress(0)
     setAudioCurrentTime(0)
     setAudioDuration(0)
+    setAudioError(false)
   }
 
   // Clear played-POI tracking and reset the <audio> element on route change.
@@ -468,12 +475,7 @@ export default function GuidedWalkLive() {
       {/* Top bar */}
       <div style={styles.topBar}>
         <div style={styles.topBarContent}>
-          <NavCircleButton onClick={() => navigate(-1)} />
-
-          <NavCircleButton
-            direction="next"
-            onClick={() => navigate('/map/explore')}
-          />
+          <NavCircleButton onClick={() => setExitPromptOpen(true)} />
         </div>
       </div>
 
@@ -509,7 +511,10 @@ export default function GuidedWalkLive() {
         ref={audioRef}
         preload="auto"
         onLoadedMetadata={() => {
-          if (audioRef.current) setAudioDuration(audioRef.current.duration)
+          if (audioRef.current) {
+            setAudioError(false)
+            setAudioDuration(audioRef.current.duration)
+          }
         }}
         onTimeUpdate={() => {
           const a = audioRef.current
@@ -523,6 +528,13 @@ export default function GuidedWalkLive() {
           setAudioPlaying(false)
           setAudioProgress(100)
         }}
+        onError={() => {
+          setAudioPlaying(false)
+          setAudioError(true)
+          setAudioProgress(0)
+          setAudioCurrentTime(0)
+          setAudioDuration(0)
+        }}
       />
 
       {/* Audio player bar */}
@@ -530,24 +542,31 @@ export default function GuidedWalkLive() {
         <div style={styles.audioBar}>
           <div style={styles.audioContent}>
             <button
+              disabled={!currentAudioPOI || audioError}
               onClick={() => {
                 const a = audioRef.current
-                if (!a || !a.src) return
+                if (!a || !a.src || audioError) return
                 if (a.paused) a.play().catch(() => {})
                 else a.pause()
               }}
-              style={styles.audioPlayButton}
+              style={styles.audioPlayButton(!currentAudioPOI || audioError)}
             >
               {audioPlaying ? '⏸' : '▶'}
             </button>
 
             <div style={styles.audioInfo}>
               <div style={styles.audioTitle}>
-                {currentAudioPOI ? currentAudioPOI.title : 'Title'}
+                {audioError
+                  ? 'Audio unavailable'
+                  : currentAudioPOI
+                    ? currentAudioPOI.title
+                    : 'Title'}
               </div>
 
               <div style={styles.audioRouteTitle(routeColor)}>
-                {currentAudioPOI
+                {audioError
+                  ? 'Missing audio file'
+                  : currentAudioPOI
                   ? currentAudioPOI.name
                   : (branchRoute ? branchRoute.title : 'Westlake Route')}
               </div>
@@ -602,9 +621,26 @@ export default function GuidedWalkLive() {
             <div style={styles.alertSubtitle}>
               Please return to the original route.
             </div>
+          </div>
 
-            <button onClick={dismissOffRouteAlert} style={styles.alertButton}>
-              Got it
+          <div style={styles.alertActionsBar}>
+            <button
+              className="walk-alert-action"
+              type="button"
+              onClick={dismissOffRouteAlert}
+              style={styles.alertCancelButton}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="walk-alert-action"
+              type="button"
+              onClick={dismissOffRouteAlert}
+              style={styles.alertResumeButton}
+            >
+              <span style={styles.alertResumeIcon}>▶</span>
+              Resume
             </button>
           </div>
         </div>
@@ -643,11 +679,61 @@ export default function GuidedWalkLive() {
               <p style={styles.poiDescription}>
                 {openPOI.desc}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div style={styles.poiButtonRow}>
-                <button style={styles.poiTagButton}>Firsthand</button>
-                <button style={styles.poiTagButton}>Context</button>
-              </div>
+      {exitPromptOpen && !done && (
+        <div style={styles.exitPromptOverlay} role="presentation">
+          <div style={styles.exitPromptDialog} role="dialog" aria-modal="true" aria-labelledby="exit-prompt-title">
+            <svg width="67" height="67" viewBox="0 0 88 88" fill="none" aria-hidden="true" style={{ aspectRatio: '1 / 1' }}>
+              <path
+                d="M38 24H24v40h14"
+                stroke="#9B9B9B"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M46 44h24"
+                stroke="#9B9B9B"
+                strokeWidth="7"
+                strokeLinecap="round"
+              />
+              <path
+                d="M60 32l12 12-12 12"
+                stroke="#9B9B9B"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+
+            <h2 id="exit-prompt-title" style={styles.exitPromptTitle}>
+              Leave this walk?
+            </h2>
+
+            <p style={styles.exitPromptText}>
+              Your progress will be saved. You can resume this walk anytime.
+            </p>
+
+            <div style={styles.exitPromptActions}>
+              <button
+                type="button"
+                onClick={() => setExitPromptOpen(false)}
+                style={styles.exitPromptContinue}
+              >
+                Continue
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/map/overview')}
+                style={styles.exitPromptLeave}
+              >
+                Leave
+              </button>
             </div>
           </div>
         </div>
@@ -663,14 +749,14 @@ export default function GuidedWalkLive() {
           </div>
 
           <div style={styles.mainCompleteSubtitle}>
-            Now choose a perspective to explore.
+            Return to the overview to start Capitol Hill.
           </div>
 
           <button
-            onClick={() => navigate('/map/explore')}
+            onClick={() => navigate('/map/overview')}
             style={styles.mainCompleteButton}
           >
-            Choose a CHOP Route →
+            Back to Overview
           </button>
         </div>
       )}
@@ -679,35 +765,27 @@ export default function GuidedWalkLive() {
       {done && branchRoute && (
         <div style={styles.branchCompleteOverlay}>
           <div style={styles.arrivedBar}>
-            Arrived
+            <button
+              type="button"
+              onClick={() => navigate('/map/overview')}
+              style={styles.arrivedCloseButton}
+              aria-label="Close completion screen"
+            >
+              ×
+            </button>
+            <span>Arrived</span>
           </div>
 
           <div style={styles.branchCompleteContent}>
-            <div style={styles.completePill}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <circle cx="8" cy="8" r="8" fill="#0049C5" />
-                <path
-                  d="M4.5 8.2 L7 10.7 L11.5 5.8"
-                  stroke="white"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-              </svg>
-
-              <span style={styles.completePillText}>
-                JOURNEY COMPLETE
-              </span>
-            </div>
-
             <div style={styles.branchCompleteTitle}>
-              You've completed this perspective
+              You’ve completed
+              <br />
+              this route
             </div>
 
             <div style={styles.branchCompleteButtonGroup}>
               <button
-                onClick={() => navigate('/map/explore')}
+                onClick={() => navigate('/map/overview')}
                 style={styles.newRouteButton}
               >
                 New Route
@@ -727,14 +805,21 @@ export default function GuidedWalkLive() {
                 onClick={() => navigate(`/perspectives/${branchRoute.perspectiveId || '1'}`)}
                 style={styles.archiveButton}
               >
-                Digital Archive <span style={styles.archiveIcon}>📖</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/map/overview')}
-                style={styles.homeButton}
-              >
-                Home
+                More Info
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 5.5C4 4.7 4.7 4 5.5 4H10c1.1 0 2 .9 2 2v14c0-1.1-.9-2-2-2H5.5C4.7 18 4 17.3 4 16.5v-11Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M20 5.5C20 4.7 19.3 4 18.5 4H14c-1.1 0-2 .9-2 2v14c0-1.1.9-2 2-2h4.5c.8 0 1.5-.7 1.5-1.5v-11Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
             </div>
           </div>
@@ -927,35 +1012,44 @@ const styles = {
   audioBar: {
     position: 'absolute',
     bottom: 24,
-    left: 16,
-    right: 16,
+    left: 24,
+    right: 24,
     zIndex: 1000,
-    background: 'white',
+    height: 93,
+    maxWidth: 512,
+    display: 'flex',
+    alignItems: 'center',
+    background: 'rgba(255, 255, 255, 0.70)',
     borderRadius: 32,
-    boxShadow: '0 12px 48px rgba(0, 73, 197, 0.1)',
-    padding: '6px 16px',
+    border: '1px solid rgba(255, 255, 255, 0.40)',
+    boxShadow: '0 12px 48px rgba(0, 73, 197, 0.10)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    padding: 16,
   },
 
   audioContent: {
+    width: '100%',
     display: 'flex',
     alignItems: 'center',
     gap: 16,
   },
 
-  audioPlayButton: {
-    width: 48,
-    height: 48,
+  audioPlayButton: disabled => ({
+    width: 59,
+    height: 59,
     borderRadius: '50%',
-    background: '#1d4ed8',
+    background: '#C53E2C',
     color: 'white',
-    fontSize: 20,
-    cursor: 'pointer',
+    fontSize: 24,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.55 : 1,
     flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     border: 'none',
-  },
+  }),
 
   audioInfo: {
     flex: 1,
@@ -969,9 +1063,9 @@ const styles = {
     marginBottom: 2,
   },
 
-  audioRouteTitle: routeColor => ({
+  audioRouteTitle: () => ({
     fontSize: 12,
-    color: routeColor,
+    color: '#8a5d55',
     marginBottom: 10,
   }),
 
@@ -985,7 +1079,7 @@ const styles = {
   audioProgressFill: progress => ({
     height: '100%',
     borderRadius: 3,
-    background: '#1d4ed8',
+    background: '#EED05D',
     width: `${progress}%`,
     transition: 'width 0.15s linear',
   }),
@@ -1008,7 +1102,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '0 32px',
+    padding: '24px',
     pointerEvents: 'none',
   },
 
@@ -1069,21 +1163,70 @@ const styles = {
     color: '#6b7280',
     textAlign: 'center',
     lineHeight: 1.5,
-    marginBottom: 28,
   },
 
-  alertButton: {
-    width: '100%',
-    padding: '14px',
-    background: '#dc2626',
-    color: 'white',
-    fontSize: 16,
+  alertActionsBar: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: 24,
+    zIndex: 2,
+    width: 'min(342px, calc(100vw - 48px))',
+    minHeight: 100,
+    background: 'rgba(255, 255, 255, 0.70)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    borderRadius: 40,
+    padding: 16,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 18,
+    boxShadow: '0 -8px 32px 0 rgba(25, 27, 36, 0.06)',
+    pointerEvents: 'auto',
+    margin: '0 auto',
+  },
+
+  alertCancelButton: {
+    width: 100,
+    height: 68,
+    border: 0,
+    borderRadius: 99,
+    background: '#E7E7F4',
+    color: '#191B24',
+    textAlign: 'center',
+    fontSize: 18,
     fontWeight: 700,
-    borderRadius: 999,
-    border: 'none',
+    lineHeight: '28px',
     cursor: 'pointer',
-    letterSpacing: '-0.2px',
-    boxShadow: '0 4px 16px rgba(220,38,38,0.35)',
+    boxShadow: '0 -8px 32px 0 rgba(25, 27, 36, 0.06)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+  },
+
+  alertResumeButton: {
+    width: 200,
+    height: 68,
+    padding: '20px 0',
+    border: 0,
+    borderRadius: 9999,
+    background: '#C53E2C',
+    color: '#FFF',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 700,
+    lineHeight: '28px',
+    cursor: 'pointer',
+    boxShadow: '0 8px 24px 0 rgba(0, 73, 197, 0.30)',
+  },
+
+  alertResumeIcon: {
+    fontSize: 14,
+    lineHeight: 1,
   },
 
   poiOverlay: {
@@ -1185,20 +1328,84 @@ const styles = {
     margin: '0 0 26px',
   },
 
-  poiButtonRow: {
+  exitPromptOverlay: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 2100,
     display: 'flex',
-    gap: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    background: 'rgba(0, 0, 0, 0.18)',
+    backdropFilter: 'blur(2px)',
+    WebkitBackdropFilter: 'blur(2px)',
   },
 
-  poiTagButton: {
-    padding: '10px 22px',
-    borderRadius: 99,
-    background: 'rgba(255,255,255,0.14)',
-    backdropFilter: 'blur(8px)',
-    border: '1.5px solid rgba(255,255,255,0.38)',
-    color: 'white',
-    fontSize: 14,
+  exitPromptDialog: {
+    width: 'min(342px, calc(100vw - 48px))',
+    height: 'min(474px, calc(100dvh - 48px))',
+    padding: '68px 34px 36px',
+    borderRadius: 32,
+    background: 'rgba(255, 255, 255, 0.70)',
+    color: '#000',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+  },
+
+  exitPromptTitle: {
+    display: 'flex',
+    width: 222,
+    height: 36,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    margin: '24px 0 0',
+    color: '#000',
+    textAlign: 'center',
+    fontSize: 24,
     fontWeight: 500,
+    lineHeight: '24px',
+  },
+
+  exitPromptText: {
+    margin: '24px 0 0',
+    color: '#424656',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 400,
+    lineHeight: '24px',
+  },
+
+  exitPromptActions: {
+    width: '100%',
+    marginTop: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 22,
+  },
+
+  exitPromptContinue: {
+    width: '100%',
+    height: 57,
+    border: 0,
+    borderRadius: 999,
+    background: '#C53E2C',
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 800,
+    cursor: 'pointer',
+  },
+
+  exitPromptLeave: {
+    width: '100%',
+    height: 57,
+    border: 0,
+    borderRadius: 999,
+    background: '#F0EFFD',
+    color: '#050505',
+    fontSize: 24,
+    fontWeight: 800,
     cursor: 'pointer',
   },
 
@@ -1251,27 +1458,47 @@ const styles = {
     position: 'absolute',
     inset: 0,
     zIndex: 2000,
-    background: 'rgba(255,255,255,0.10)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+    background: 'rgba(255,255,255,0.68)',
+    backdropFilter: 'blur(14px)',
+    WebkitBackdropFilter: 'blur(14px)',
     display: 'flex',
     flexDirection: 'column',
   },
 
   arrivedBar: {
+    position: 'relative',
     flexShrink: 0,
     width: '100%',
-    minHeight: 64,
-    padding: '20px 24px',
+    height: 65,
+    padding: '0 24px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
-    borderBottom: '1px solid rgba(0,0,0,0.08)',
-    fontSize: 16,
-    fontWeight: 700,
-    color: '#0049C5',
-    letterSpacing: '-0.2px',
+    background: 'rgba(255,255,255,0.82)',
+    border: '1px solid rgba(0,0,0,0.04)',
+    boxShadow: '0 12px 32px rgba(0,0,0,0.03)',
+    fontSize: 20,
+    fontWeight: 800,
+    color: '#C53E2C',
+    lineHeight: 1,
+  },
+
+  arrivedCloseButton: {
+    position: 'absolute',
+    left: 26,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: 28,
+    height: 28,
+    padding: 0,
+    border: 0,
+    background: 'transparent',
+    color: '#C53E2C',
+    fontSize: 31,
+    lineHeight: '28px',
+    fontWeight: 300,
+    cursor: 'pointer',
   },
 
   branchCompleteContent: {
@@ -1280,69 +1507,54 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '0 32px',
-  },
-
-  completePill: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    background: 'white',
-    borderRadius: 999,
-    padding: '7px 16px 7px 10px',
-    marginBottom: 20,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-  },
-
-  completePillText: {
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: '0.08em',
-    color: '#0049C5',
+    padding: '0 58px 88px',
   },
 
   branchCompleteTitle: {
-    fontSize: 'clamp(26px, 7vw, 32px)',
+    fontSize: 'clamp(34px, 9.2vw, 42px)',
     fontWeight: 800,
-    color: '#0a0a0a',
+    color: '#111827',
     textAlign: 'center',
-    lineHeight: 1.15,
-    letterSpacing: '-0.8px',
-    marginBottom: 48,
+    lineHeight: 1.08,
+    letterSpacing: 0,
+    marginBottom: 136,
   },
 
   branchCompleteButtonGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
+    gap: 19,
     width: '100%',
+    maxWidth: 309,
     alignItems: 'center',
   },
 
   newRouteButton: {
     width: '100%',
-    padding: '16px',
-    background: '#1d4ed8',
+    height: 58,
+    padding: '0 24px',
+    background: '#C53E2C',
     borderRadius: 999,
-    fontSize: 16,
-    fontWeight: 600,
+    fontSize: 19,
+    fontWeight: 800,
     color: 'white',
     cursor: 'pointer',
     border: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    boxShadow: '0 6px 16px rgba(29,78,216,0.25)',
+    gap: 8,
+    boxShadow: '0 10px 22px rgba(197, 62, 44, 0.18)',
   },
 
   archiveButton: {
     width: '100%',
-    padding: '16px',
-    background: '#E7E7F4',
+    height: 58,
+    padding: '0 24px',
+    background: '#E8E7F6',
     borderRadius: 999,
-    fontSize: 16,
-    fontWeight: 600,
+    fontSize: 18,
+    fontWeight: 800,
     color: '#111827',
     cursor: 'pointer',
     border: 'none',
@@ -1350,21 +1562,5 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-  },
-
-  archiveIcon: {
-    fontSize: 18,
-  },
-
-  homeButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: 14,
-    color: '#8F8F8F',
-    cursor: 'pointer',
-    marginTop: 6,
-    textDecoration: 'underline',
-    textUnderlineOffset: '3px',
-    padding: '4px 12px',
   },
 }

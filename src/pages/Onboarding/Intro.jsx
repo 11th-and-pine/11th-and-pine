@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import icon from '../../assets/images/intro-icon.jpg'
+import icon from '../../assets/images/intro-icon.png'
 
 export default function Intro() {
   const navigate = useNavigate()
@@ -32,7 +32,7 @@ export default function Intro() {
         <img
           src={icon}
           alt="11th & Pine"
-          className="w-full h-full object-cover animate-intro-spin"
+          className="onboarding-intro-image animate-intro-spin"
         />
       </div>
 

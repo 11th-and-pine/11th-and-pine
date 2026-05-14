@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Map, { Marker, Source, Layer } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -36,6 +37,7 @@ function PerspectiveDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
   const perspective = getPerspectiveById(Number(id))
+  const [audioError, setAudioError] = useState(false)
 
   if (!perspective) {
     return (
@@ -149,22 +151,23 @@ function PerspectiveDetail() {
 
       <div style={styles.audioBar}>
         <div style={styles.audioInfo}>
-          <p style={styles.audioLabel}>Preview</p>
-          <p style={styles.audioTime}>0:00 / {audioDuration}</p>
+          <p style={styles.audioLabel}>{audioError ? 'Missing audio file' : 'Preview'}</p>
+          <p style={styles.audioTime}>{audioError ? 'Unavailable' : `0:00 / ${audioDuration}`}</p>
         </div>
 
         {perspective.audioUrl ? (
           <button
-            style={styles.playButton}
+            disabled={audioError}
+            style={styles.playButton(audioError)}
             onClick={() => {
               const audio = document.getElementById('perspective-audio-player')
-              if (audio) audio.play()
+              if (audio && !audioError) audio.play().catch(() => setAudioError(true))
             }}
           >
             ▶
           </button>
         ) : (
-          <button style={{ ...styles.playButton, opacity: 0.5 }} disabled>
+          <button style={styles.playButton(true)} disabled>
             ▶
           </button>
         )}
@@ -175,6 +178,8 @@ function PerspectiveDetail() {
           id="perspective-audio-player"
           src={perspective.audioUrl}
           preload="metadata"
+          onLoadedMetadata={() => setAudioError(false)}
+          onError={() => setAudioError(true)}
           style={{ display: 'none' }}
         />
       )}
@@ -346,21 +351,22 @@ const styles = {
     fontWeight: '800',
     color: '#000',
   },
-  playButton: {
+  playButton: disabled => ({
     width: '49px',
     height: '49px',
     borderRadius: '50%',
     border: 'none',
-    backgroundColor: '#1560f2',
+    backgroundColor: '#C53E2C',
     color: '#fff',
     fontSize: '34px',
-    cursor: 'pointer',
-    boxShadow: '0 6px 14px rgba(21,96,242,0.3)',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
+    boxShadow: '0 6px 14px rgba(197, 62, 44, 0.30)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     paddingLeft: '6px',
-  },
+  }),
   notFoundWrap: {
     padding: '24px',
   },
