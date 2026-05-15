@@ -5,28 +5,29 @@ import BottomNav from '../../components/BottomNav'
 import perspectiveWestlakeIcon from '../../assets/images/perspective-westlake-icon.png'
 import perspectiveChopIcon from '../../assets/images/perspective-chop-icon.svg'
 import perspectiveLabelIcon from '../../assets/images/perspective-label-icon.png'
+import labelMapImage from '../../assets/images/label-map.jpg'
 
 const LABELS = [
   {
-    id: 'label-1',
-    title: 'Old Building',
-    address: 'xxxx Ave',
-    desc: 'A quiet street that once held voices, gatherings, and stories. Walk closer to uncover the layered memories left behind.',
-    imageUrl: 'src/assets/images/label-map.jpg',
+    id: 'poi-westlake-plaza',
+    title: 'Westlake Plaza',
+    address: '4th Ave & Pine St',
+    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.',
+    imageUrl: labelMapImage,
   },
   {
-    id: 'label-2',
-    title: 'Old Building',
-    address: 'bbbb Ave',
-    desc: 'A nearby site connected to community movement and public memory.',
-    imageUrl: 'src/assets/images/label-map.jpg',
+    id: 'poi-pike-pine',
+    title: 'Pike/Pine Corridor',
+    address: 'Pike St & Pine St',
+    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.',
+    imageUrl: labelMapImage,
   },
   {
-    id: 'label-3',
-    title: 'Old Building',
-    address: 'cccc Ave',
-    desc: 'A place marker for another layer of the walking archive.',
-    imageUrl: 'src/assets/images/label-map.jpg',
+    id: 'poi-cal-anderson',
+    title: 'Cal Anderson Park',
+    address: '11th Ave & E Pine St',
+    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.',
+    imageUrl: labelMapImage,
   },
 ]
 
@@ -67,6 +68,10 @@ function PerspectivesList() {
 
   const capitalHillItems = perspectives.filter((p) => p.id !== westlake?.id)
 
+  const startWalking = () => {
+    navigate('/map/navigate')
+  }
+
   const handleTabChange = (tab) => {
     setActiveTab(tab)
 
@@ -95,7 +100,7 @@ function PerspectivesList() {
               alt=""
               style={styles.westlakeTabIcon}
             />
-            <span>Westlake</span>
+            <span style={styles.tabText}>Westlake</span>
           </button>
 
           <button
@@ -110,7 +115,7 @@ function PerspectivesList() {
               alt=""
               style={styles.chopTabIcon}
             />
-            <span>Capitol Hill</span>
+            <span style={styles.tabText}>Capitol Hill</span>
           </button>
 
           <button
@@ -125,7 +130,7 @@ function PerspectivesList() {
               alt=""
               style={styles.labelTabIcon}
             />
-            <span>Labels</span>
+            <span style={styles.tabText}>Labels</span>
           </button>
         </div>
 
@@ -136,7 +141,7 @@ function PerspectivesList() {
               expanded={expandedId === westlake.id}
               onToggle={() => handleCardClick(westlake.id)}
               onMoreInfo={() => navigate(`/perspectives/${westlake.id}`)}
-              onContinue={() => navigate('/map/walking')}
+              onContinue={startWalking}
               title="Westlake Protest"
               subtitle=""
               progress={70}
@@ -151,7 +156,7 @@ function PerspectivesList() {
                 expanded={expandedId === p.id}
                 onToggle={() => handleCardClick(p.id)}
                 onMoreInfo={() => navigate(`/perspectives/${p.id}`)}
-                onContinue={() => navigate('/map/walking')}
+                onContinue={startWalking}
                 title={index === 0 ? 'Protest & Conflict' : 'Community & Support'}
                 subtitle={`From ${p.name}’s View`}
                 progress={index === 0 ? 5 : 0}
@@ -269,23 +274,30 @@ const styles = {
   },
   tabs: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
-    padding: '58px 28px 0',
+    gridTemplateColumns: '1.12fr 1.2fr 0.92fr',
+    alignItems: 'end',
+    padding: '58px 18px 0',
     backgroundColor: '#F3F3F1',
   },
   tab: {
-    padding: '0 0 14px',
+    height: 46,
+    minWidth: 0,
+    padding: '0 0 10px',
     border: 'none',
     borderBottom: '1.5px solid rgba(197, 62, 44, 0.35)',
     background: 'transparent',
     color: 'rgba(197, 62, 44, 0.5)',
     fontSize: '14px',
+    fontStyle: 'normal',
     fontWeight: 700,
+    lineHeight: 'normal',
     cursor: 'pointer',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'center',
-    gap: '6px',
+    gap: '4px',
+    whiteSpace: 'nowrap',
+    overflow: 'visible',
   },
   activeTab: {
     color: '#C53E2C',
@@ -295,12 +307,22 @@ const styles = {
     color: '#C53E2C',
     borderBottom: '3px solid #C53E2C',
   },
+  tabText: {
+    color: 'currentColor',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 700,
+    lineHeight: 'normal',
+    flexShrink: 0,
+    transform: 'translateY(2px)',
+  },
   westlakeTabIcon: {
     width: '45px',
     height: '30px',
     aspectRatio: '3 / 2',
     objectFit: 'cover',
     flexShrink: 0,
+    transform: 'translateY(6px)',
   },
   chopTabIcon: {
     width: '12px',
@@ -313,6 +335,7 @@ const styles = {
     aspectRatio: '3 / 2',
     objectFit: 'cover',
     flexShrink: 0,
+    transform: 'translateY(5px)',
   },
   content: {
     padding: '28px 18px 110px',
@@ -460,8 +483,10 @@ const styles = {
   labelAddress: {
     margin: '4px 0 0',
     fontSize: '14px',
-    fontWeight: 700,
-    color: '#b7d5ff',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: 'normal',
+    color: '#505F76',
   },
   labelExpanded: {
     padding: '0 18px 18px',

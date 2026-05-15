@@ -206,7 +206,7 @@ export default function NavigateToStart() {
           <div style={styles.gpsStatusDot(userPos)} />
 
           <span style={styles.gpsStatusText}>
-            {userPos ? 'Live GPS' : 'Locating…'}
+            {gpsError ? 'GPS unavailable' : userPos ? 'Live GPS' : 'Locating…'}
           </span>
         </div>
       </div>
@@ -245,14 +245,29 @@ export default function NavigateToStart() {
           </div>
         )}
 
-        <button
-          onClick={() => navigate('/map/walking', {
-            state: route ? { route } : undefined,
-          })}
-          style={styles.startButton}
-        >
-          {atStart ? 'Begin Walk →' : 'Begin Walk Anyway →'}
-        </button>
+        <div style={styles.walkChoiceLabel}>
+          {atStart ? 'Choose how to begin' : 'Choose a test mode'}
+        </div>
+
+        <div style={styles.walkChoiceRow}>
+          <button
+            onClick={() => navigate('/map/walking/sim', {
+              state: route ? { route } : undefined,
+            })}
+            style={styles.simButton}
+          >
+            Simulation
+          </button>
+
+          <button
+            onClick={() => navigate('/map/walking/live', {
+              state: route ? { route } : undefined,
+            })}
+            style={styles.walkButton}
+          >
+            Walk
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -284,21 +299,21 @@ const styles = {
   },
 
   navLinePaint: {
-    'line-color': '#3b82f6',
+    'line-color': '#C53E2C',
     'line-width': 2,
     'line-opacity': 0.65,
     'line-dasharray': [2.5, 2],
   },
 
   startCircleFillPaint: {
-    'fill-color': '#22c55e',
-    'fill-opacity': 0.08,
+    'fill-color': '#EED05D',
+    'fill-opacity': 0.14,
   },
 
   startCircleOutlinePaint: {
-    'line-color': '#22c55e',
+    'line-color': '#EED05D',
     'line-width': 1.5,
-    'line-opacity': 0.6,
+    'line-opacity': 0.8,
     'line-dasharray': [2, 2],
   },
 
@@ -311,7 +326,7 @@ const styles = {
   userMarkerPing: {
     position: 'absolute',
     inset: 0,
-    background: 'rgba(59,130,246,0.35)',
+    background: 'rgba(197, 62, 44, 0.22)',
     borderRadius: '50%',
     animation: 'userPing 2s ease-in-out infinite',
   },
@@ -323,19 +338,19 @@ const styles = {
     transform: 'translate(-50%,-50%)',
     width: 13,
     height: 13,
-    background: '#3b82f6',
+    background: '#C53E2C',
     border: '3px solid white',
     borderRadius: '50%',
-    boxShadow: '0 2px 10px rgba(59,130,246,0.7)',
+    boxShadow: '0 2px 10px rgba(197, 62, 44, 0.55)',
   },
 
   startMarker: {
     width: 18,
     height: 18,
-    background: '#22c55e',
+    background: '#EED05D',
     border: '3px solid white',
     borderRadius: '50%',
-    boxShadow: '0 2px 10px rgba(34,197,94,0.6)',
+    boxShadow: '0 2px 10px rgba(238, 208, 93, 0.65)',
   },
 
   topBar: {
@@ -427,11 +442,37 @@ const styles = {
     marginTop: 4,
   },
 
-  startButton: {
+  walkChoiceLabel: {
+    marginBottom: 10,
+    color: '#6b7280',
+    fontSize: 13,
+    fontWeight: 600,
+    textAlign: 'center',
+  },
+
+  walkChoiceRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 12,
+  },
+
+  simButton: {
     width: '100%',
+    height: 52,
+    background: '#E7E7F4',
+    color: '#191B24',
+    borderRadius: 9999,
+    fontSize: 16,
+    fontWeight: 700,
+    cursor: 'pointer',
+    border: 'none',
+  },
+
+  walkButton: {
+    width: '100%',
+    height: 52,
     background: '#C53E2C',
     color: '#fff',
-    padding: '15px',
     borderRadius: 9999,
     fontSize: 16,
     fontWeight: 700,

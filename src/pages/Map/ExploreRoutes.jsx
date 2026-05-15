@@ -273,7 +273,7 @@ export default function ExploreRoutes() {
 
   function handleStartRoute() {
     if (activeRoute) {
-      navigate('/map/walking', {
+      navigate('/map/navigate', {
         state: {
           route: activeRoute,
         },

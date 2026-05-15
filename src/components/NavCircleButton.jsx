@@ -23,7 +23,14 @@ export default function NavCircleButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      style={{ ...buttonStyle, ...style }}
+      style={{
+        ...buttonStyle,
+        ...style,
+        width: 48,
+        height: 48,
+        minWidth: 48,
+        minHeight: 48,
+      }}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

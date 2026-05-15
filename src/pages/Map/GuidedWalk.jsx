@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Map, { Source, Layer, Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -9,15 +9,16 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 
 const DEFAULT_ROUTE_COLOR = '#5272FF'
+const PRIMARY_BUTTON_COLOR = '#C53E2C'
 const WRONG_ROUTE_COLOR = '#ef4444'
 
 // Walk pacing — each "step" along the route advances every WALK_INTERVAL_MS.
-// POI audio windows (with current 3000ms):
-//   POI 1 (step 1) → POI 2 (step 3): 6s for Westlake Plaza audio
-//   POI 2 (step 3) → POI 3 (step 6): 9s for Pike/Pine audio
-//   POI 3 (step 6) → end       (step 7): 3s, but audio keeps playing past `done`
+// POI audio windows (with current 2200ms):
+//   POI 1 (step 1) → POI 2 (step 3): 4.4s for Westlake Plaza audio
+//   POI 2 (step 3) → POI 3 (step 6): 6.6s for Pike/Pine audio
+//   POI 3 (step 6) → end       (step 7): 2.2s, but audio keeps playing past `done`
 // Bump this if your recordings are longer than the windows above.
-const WALK_INTERVAL_MS = 3000
+const WALK_INTERVAL_MS = 2200
 const CAMERA_MOVE_DURATION = 1200
 const CAMERA_IDLE_DURATION = 700
 const INITIAL_ZOOM = 15.5
@@ -51,7 +52,8 @@ const POIS = [
     audioUrl: '/audio/westlake-plaza.mp3',
     name: 'Westlake Plaza',
     title: 'Where the March Began',
-    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.'
+    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.',
+    ttsText: 'You are at Westlake Plaza. This is the starting point for the walk.'
   },
   {
     id: 2,
@@ -60,7 +62,8 @@ const POIS = [
     audioUrl: '/audio/pike-pine.mp3',
     name: 'Pike/Pine Corridor',
     title: 'From Auto Row to Activism',
-    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.'
+    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.',
+    ttsText: 'You are moving through the Pike Pine corridor. Pause here, look around, and then continue east toward Capitol Hill.'
   },
   {
     id: 3,
@@ -69,7 +72,8 @@ const POIS = [
     audioUrl: '/audio/cal-anderson.mp3',
     name: 'Cal Anderson Park',
     title: 'The Autonomous Zone',
-    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.'
+    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.',
+    ttsText: 'You are near Cal Anderson Park.'
   },
 ]
 
@@ -176,6 +180,7 @@ export default function GuidedWalk() {
   const simTimer = useRef(null)
   const wrongSimTimer = useRef(null)
   const audioRef = useRef(null)
+  const speechRef = useRef(null)
   const playedPOIs = useRef(new Set())
 
   const branchRoute = location.state ? location.state.route : null
@@ -201,6 +206,7 @@ export default function GuidedWalk() {
   const [audioCurrentTime, setAudioCurrentTime] = useState(0)
   const [currentAudioPOI, setCurrentAudioPOI] = useState(null)
   const [audioError, setAudioError] = useState(false)
+  const [usingTTS, setUsingTTS] = useState(false)
 
   const normalPoint = route[step] || route[route.length - 1] || WESTLAKE_ROUTE[0]
   const wrongPoint = WRONG_PATH_ROUTE[Math.min(wrongStep, WRONG_PATH_ROUTE.length - 1)]
@@ -210,11 +216,63 @@ export default function GuidedWalk() {
     ? WRONG_PATH_ROUTE.slice(0, wrongStep + 1)
     : route.slice(0, step + 1)
 
+  const stopSpeech = useCallback(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
+    speechRef.current = null
+    setUsingTTS(false)
+  }, [])
+
+  const speakPOIText = useCallback((poi) => {
+    if (!poi || typeof window === 'undefined' || !window.speechSynthesis) {
+      setAudioPlaying(false)
+      setAudioError(true)
+      return
+    }
+
+    if (speechRef.current?.poiId === poi.id) {
+      return
+    }
+
+    window.speechSynthesis.cancel()
+
+    const utterance = new SpeechSynthesisUtterance(poi.ttsText || poi.desc)
+    utterance.poiId = poi.id
+    utterance.rate = 0.94
+    utterance.pitch = 1
+    utterance.onstart = () => {
+      setUsingTTS(true)
+      setAudioError(false)
+      setAudioPlaying(true)
+    }
+    utterance.onend = () => {
+      speechRef.current = null
+      setUsingTTS(false)
+      setAudioPlaying(false)
+      setAudioProgress(100)
+    }
+    utterance.onerror = () => {
+      speechRef.current = null
+      setUsingTTS(false)
+      setAudioPlaying(false)
+      setAudioError(true)
+    }
+
+    speechRef.current = utterance
+    setUsingTTS(true)
+    setAudioError(false)
+    setAudioProgress(0)
+    setAudioCurrentTime(0)
+    setAudioDuration(0)
+    window.speechSynthesis.speak(utterance)
+  }, [])
+
   // Trigger POI audio when the walker arrives at a POI's step.
   // Each POI fires at most once per route (tracked in playedPOIs) so
   // re-stepping or jitter won't replay the same clip. This is a plain
   // function — it's called from the simulation interval callback below.
-  const triggerPOIAudioForStep = (currentStep) => {
+  const triggerPOIAudioForStep = useCallback((currentStep) => {
     const poi = POIS.find(p => p.triggerStep === currentStep)
     if (!poi || playedPOIs.current.has(poi.id)) return
 
@@ -224,6 +282,7 @@ export default function GuidedWalk() {
     setAudioProgress(0)
     setAudioCurrentTime(0)
     setAudioDuration(0)
+    stopSpeech()
 
     const a = audioRef.current
     if (!a) return
@@ -233,16 +292,15 @@ export default function GuidedWalk() {
     a.play()
       .then(() => setAudioPlaying(true))
       .catch(() => {
-        // Browser blocked autoplay (no user gesture yet) — leave paused,
-        // user can hit ▶ on the audio bar to start.
-        setAudioPlaying(false)
+        speakPOIText(poi)
       })
-  }
+  }, [speakPOIText, stopSpeech])
 
   // Sync external audioPlaying state with the actual <audio> element.
   // (Lets the audio bar's ▶/⏸ button drive playback.)
   useEffect(() => {
     const a = audioRef.current
+    if (usingTTS) return
     if (!a || !a.src) return
 
     if (audioPlaying) {
@@ -250,7 +308,7 @@ export default function GuidedWalk() {
     } else {
       a.pause()
     }
-  }, [audioPlaying])
+  }, [audioPlaying, usingTTS])
 
 
   // Camera
@@ -320,7 +378,7 @@ export default function GuidedWalk() {
       clearInterval(simTimer.current)
       simTimer.current = null
     }
-  }, [simulating, done, wrongPathMode, route])
+  }, [simulating, done, wrongPathMode, route, triggerPOIAudioForStep])
 
   // Wrong path simulation
   useEffect(() => {
@@ -379,11 +437,16 @@ export default function GuidedWalk() {
     setAudioCurrentTime(0)
     setAudioDuration(0)
     setAudioError(false)
+    setUsingTTS(false)
   }
 
   // Clear played-POI tracking and reset the <audio> element when the route changes.
   useEffect(() => {
     playedPOIs.current.clear()
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
+    speechRef.current = null
     const a = audioRef.current
     if (a) {
       a.pause()
@@ -506,8 +569,43 @@ export default function GuidedWalk() {
             anchor="center"
           >
             <div style={styles.walkerWrapper}>
-              <div style={styles.walkerPulse(routeColor, wrongPathMode)} />
-              <div style={styles.walkerDot(routeColor, wrongPathMode)} />
+              <svg
+                width="14"
+                height="22"
+                viewBox="0 0 14 22"
+                fill="none"
+                style={styles.walkerDirection}
+                aria-hidden="true"
+              >
+                <path
+                  d="M13.6049 0.79137C9.13084 -0.572843 4.30883 -0.163951 0.000218554 1.94501L7.75183 21.2901L13.6049 0.79137Z"
+                  fill="url(#walker-direction-gradient-sim)"
+                />
+                <defs>
+                  <radialGradient
+                    id="walker-direction-gradient-sim"
+                    cx="0"
+                    cy="0"
+                    r="1"
+                    gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(7.75183 21.2901) rotate(10) scale(19.6964 21.3378)"
+                  >
+                    <stop stopColor="#3478F6" />
+                    <stop offset="1" stopColor="#3478F6" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+              </svg>
+
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                style={styles.walkerDot}
+                aria-hidden="true"
+              >
+                <circle cx="9" cy="9" r="7.5" fill="#0C79FE" stroke="white" strokeWidth="3" />
+              </svg>
             </div>
           </Marker>
         )}
@@ -566,6 +664,7 @@ export default function GuidedWalk() {
         preload="auto"
         onLoadedMetadata={() => {
           if (audioRef.current) {
+            setUsingTTS(false)
             setAudioError(false)
             setAudioDuration(audioRef.current.duration)
           }
@@ -584,10 +683,14 @@ export default function GuidedWalk() {
         }}
         onError={() => {
           setAudioPlaying(false)
-          setAudioError(true)
           setAudioProgress(0)
           setAudioCurrentTime(0)
           setAudioDuration(0)
+          if (currentAudioPOI) {
+            speakPOIText(currentAudioPOI)
+          } else {
+            setAudioError(true)
+          }
         }}
       />
 
@@ -598,14 +701,34 @@ export default function GuidedWalk() {
             <button
               disabled={!currentAudioPOI || audioError}
               onClick={() => {
+                if (usingTTS) {
+                  if (audioPlaying) {
+                    window.speechSynthesis.pause()
+                    setAudioPlaying(false)
+                  } else {
+                    window.speechSynthesis.resume()
+                    setAudioPlaying(true)
+                  }
+                  return
+                }
                 const a = audioRef.current
                 if (!a || !a.src || audioError) return  // No POI has triggered yet
-                if (a.paused) a.play().catch(() => {})
+                if (a.paused) a.play().catch(() => {
+                  if (currentAudioPOI) speakPOIText(currentAudioPOI)
+                })
                 else a.pause()
               }}
               style={styles.audioPlayButton(!currentAudioPOI || audioError)}
             >
-              {audioPlaying ? '⏸' : '▶'}
+              {audioPlaying ? (
+                <svg width="15" height="18" viewBox="0 0 15 18" fill="none" aria-hidden="true">
+                  <path d="M10 17.5V0H15V17.5H10ZM0 17.5V0H5V17.5H0Z" fill="white" />
+                </svg>
+              ) : (
+                <svg width="18" height="20" viewBox="0 0 18 20" fill="none" aria-hidden="true">
+                  <path d="M17 10L1.25 19.0933V0.906734L17 10Z" fill="white" />
+                </svg>
+              )}
             </button>
 
             <div style={styles.audioInfo}>
@@ -620,6 +743,8 @@ export default function GuidedWalk() {
               <div style={styles.audioRouteTitle(routeColor)}>
                 {audioError
                   ? 'Missing audio file'
+                  : usingTTS
+                    ? 'Text narration'
                   : currentAudioPOI
                   ? currentAudioPOI.name
                   : (branchRoute ? branchRoute.title : 'Westlake Route')}
@@ -794,23 +919,63 @@ export default function GuidedWalk() {
 
       {/* Main route complete */}
       {done && !branchRoute && (
-        <div style={styles.mainCompleteSheet}>
-          <div style={styles.sheetHandle} />
-
-          <div style={styles.mainCompleteTitle}>
-            Westlake route complete!
+        <div style={styles.branchCompleteOverlay}>
+          <div style={styles.arrivedBar}>
+            <NavCircleButton
+              onClick={() => navigate('/map/overview')}
+              ariaLabel="Close completion screen"
+              style={styles.arrivedBackButton}
+            />
+            <span>Arrived</span>
           </div>
 
-          <div style={styles.mainCompleteSubtitle}>
-            Return to the overview to start Capitol Hill.
-          </div>
+          <div style={styles.branchCompleteContent}>
+            <div style={styles.branchCompleteTitle}>
+              You’ve completed
+              <br />
+              this route
+            </div>
 
-          <button
-            onClick={() => navigate('/map/overview')}
-            style={styles.mainCompleteButton}
-          >
-            Back to Overview
-          </button>
+            <div style={styles.branchCompleteButtonGroup}>
+              <button
+                onClick={() => navigate('/map/overview')}
+                style={styles.newRouteButton}
+              >
+                New Route
+
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M21 3 L3 10.5 L10.5 13.5 L13.5 21 L21 3 Z"
+                    stroke="white"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => navigate('/perspectives/1')}
+                style={styles.archiveButton}
+              >
+                More Info
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 5.5C4 4.7 4.7 4 5.5 4H10c1.1 0 2 .9 2 2v14c0-1.1-.9-2-2-2H5.5C4.7 18 4 17.3 4 16.5v-11Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M20 5.5C20 4.7 19.3 4 18.5 4H14c-1.1 0-2 .9-2 2v14c0-1.1.9-2 2-2h4.5c.8 0 1.5-.7 1.5-1.5v-11Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -818,14 +983,11 @@ export default function GuidedWalk() {
       {done && branchRoute && (
         <div style={styles.branchCompleteOverlay}>
           <div style={styles.arrivedBar}>
-            <button
-              type="button"
+            <NavCircleButton
               onClick={() => navigate('/map/overview')}
-              style={styles.arrivedCloseButton}
-              aria-label="Close completion screen"
-            >
-              ×
-            </button>
+              ariaLabel="Close completion screen"
+              style={styles.arrivedBackButton}
+            />
             <span>Arrived</span>
           </div>
 
@@ -962,33 +1124,31 @@ const styles = {
 
   walkerWrapper: {
     position: 'relative',
-    width: 26,
-    height: 26,
+    width: 84,
+    height: 84,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
 
-  walkerPulse: (routeColor, wrongPathMode) => ({
+  walkerDirection: {
     position: 'absolute',
-    inset: 0,
-    background: wrongPathMode ? 'rgba(239,68,68,0.3)' : `${routeColor}33`,
-    borderRadius: '50%',
-    animation: wrongPathMode
-      ? 'wrongWalkerPulse 1.2s ease-out infinite'
-      : 'walkerPulse 1.8s ease-out infinite',
-  }),
+    left: '50%',
+    bottom: '50%',
+    width: 42.676,
+    height: 39.393,
+    transform: 'translateX(-50%) rotate(-80deg)',
+    transformOrigin: '50% 100%',
+    zIndex: 0,
+    pointerEvents: 'none',
+  },
 
-  walkerDot: (routeColor, wrongPathMode) => ({
-    width: 14,
-    height: 14,
-    background: wrongPathMode ? WRONG_ROUTE_COLOR : routeColor,
-    border: '3px solid white',
-    borderRadius: '50%',
-    boxShadow: wrongPathMode
-      ? '0 2px 10px rgba(239,68,68,0.7)'
-      : `0 2px 10px ${routeColor}b3`,
-  }),
+  walkerDot: {
+    position: 'relative',
+    zIndex: 2,
+    filter: 'drop-shadow(0 2px 8px rgba(12, 121, 254, 0.45))',
+  },
 
   topBar: {
     position: 'absolute',
@@ -1098,17 +1258,19 @@ const styles = {
   audioBar: {
     position: 'absolute',
     bottom: 24,
-    left: 24,
-    right: 24,
+    left: '50%',
+    transform: 'translateX(-50%)',
     zIndex: 1000,
+    width: 342,
     height: 93,
     maxWidth: 512,
     display: 'flex',
     alignItems: 'center',
+    gap: 16,
     background: 'rgba(255, 255, 255, 0.70)',
     borderRadius: 32,
     border: '1px solid rgba(255, 255, 255, 0.40)',
-    boxShadow: '0 12px 48px rgba(0, 73, 197, 0.10)',
+    boxShadow: '0 12px 48px 0 rgba(0, 73, 197, 0.10)',
     backdropFilter: 'blur(10px)',
     WebkitBackdropFilter: 'blur(10px)',
     padding: 16,
@@ -1122,12 +1284,12 @@ const styles = {
   },
 
   audioPlayButton: disabled => ({
-    width: 59,
-    height: 59,
-    borderRadius: '50%',
+    position: 'relative',
+    width: 48,
+    height: 48,
+    borderRadius: 9999,
     background: '#C53E2C',
     color: 'white',
-    fontSize: 24,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.55 : 1,
     flexShrink: 0,
@@ -1135,6 +1297,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     border: 'none',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.10)',
   }),
 
   audioInfo: {
@@ -1495,51 +1658,6 @@ const styles = {
     cursor: 'pointer',
   },
 
-  mainCompleteSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 2000,
-    background: 'white',
-    borderRadius: '22px 22px 0 0',
-    boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
-    padding: '20px 24px 44px',
-  },
-
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    background: '#d1d5db',
-    borderRadius: 2,
-    margin: '0 auto 20px',
-  },
-
-  mainCompleteTitle: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: '#111827',
-    marginBottom: 8,
-  },
-
-  mainCompleteSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 24,
-  },
-
-  mainCompleteButton: {
-    width: '100%',
-    padding: '16px',
-    background: DEFAULT_ROUTE_COLOR,
-    borderRadius: 16,
-    fontSize: 16,
-    fontWeight: 600,
-    color: 'white',
-    cursor: 'pointer',
-    border: 'none',
-  },
-
   branchCompleteOverlay: {
     position: 'absolute',
     inset: 0,
@@ -1570,21 +1688,11 @@ const styles = {
     lineHeight: 1,
   },
 
-  arrivedCloseButton: {
+  arrivedBackButton: {
     position: 'absolute',
-    left: 26,
+    left: 24,
     top: '50%',
     transform: 'translateY(-50%)',
-    width: 28,
-    height: 28,
-    padding: 0,
-    border: 0,
-    background: 'transparent',
-    color: '#C53E2C',
-    fontSize: 31,
-    lineHeight: '28px',
-    fontWeight: 300,
-    cursor: 'pointer',
   },
 
   branchCompleteContent: {

@@ -465,7 +465,7 @@ button, input, select, textarea, optgroup {
 
 .overview-menu {
   position: absolute;
-  top: calc(42px + var(--safe-top, 0px));
+  top: calc(34px + var(--safe-top, 0px));
   left: 24px;
   z-index: 10;
   width: 48px;
@@ -720,8 +720,8 @@ button, input, select, textarea, optgroup {
   position: absolute;
   top: 24px;
   left: 25px;
-  z-index: 2;
-  width: 170px;
+  z-index: 4;
+  width: 166px;
 }
 
 .overview-title {
@@ -746,13 +746,13 @@ button, input, select, textarea, optgroup {
   top: 0;
   right: 15px;
   z-index: 3;
-  width: 169px;
+  width: min(169px, 42%);
   height: 50px;
   border-radius: 25px;
   background: #C53E2C;
   color: white;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
-  font-size: 18px;
+  font-size: clamp(16px, 4.5vw, 18px);
   font-weight: 700;
   letter-spacing: 0.2px;
   line-height: normal;
@@ -813,7 +813,7 @@ button, input, select, textarea, optgroup {
 
 .route-card-title {
   position: relative;
-  top: -8px;
+  top: -12px;
   z-index: 2;
   max-width: 104px;
   overflow: hidden;
@@ -827,7 +827,7 @@ button, input, select, textarea, optgroup {
 
 .route-card-subtitle {
   position: relative;
-  top: -8px;
+  top: -12px;
   z-index: 2;
   margin-top: 6px;
   max-width: 104px;
@@ -842,17 +842,26 @@ button, input, select, textarea, optgroup {
 .route-card img {
   position: absolute;
   right: 0;
-  bottom: 16px;
-  width: 52px;
-  height: 66px;
+  bottom: 14px;
+  width: 58px;
+  height: 70px;
   object-fit: contain;
 }
 
+.route-card-westlake img {
+  right: -6px;
+}
+
 .route-card-chop img {
-  width: 62px;
-  height: 96px;
-  right: 2px;
-  bottom: 8px;
+  width: 58px;
+  height: 70px;
+  right: 0;
+  bottom: 14px;
+}
+
+.route-card-chop .route-card-title,
+.route-card-chop .route-card-subtitle {
+  max-width: 120px;
 }
 
 .overview-bottom-nav {
