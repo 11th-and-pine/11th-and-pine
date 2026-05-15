@@ -28,8 +28,8 @@ const routeLayer = {
   id: 'route-line',
   type: 'line',
   paint: {
-    'line-color': '#2563eb',
-    'line-width': 4,
+    'line-color': '#4b8cff',
+    'line-width': 5,
   },
 }
 
@@ -57,120 +57,110 @@ function PerspectiveDetail() {
     ? { longitude: perspective.location[1], latitude: perspective.location[0] }
     : { longitude: -122.328, latitude: 47.6148 }
 
-  const audioDuration = perspective.previewDuration || '0:30'
-  const durationText = perspective.durationText || '25 Minutes'
-  const tapCount = perspective.tapCount || '10 Points'
+  const playAudio = () => {
+    const audio = document.getElementById('perspective-audio-player')
+    if (audio && !audioError) {
+      audio.play().catch(() => setAudioError(true))
+    }
+  }
 
   return (
     <div style={styles.page}>
-      {/* Floating back button — lives outside the scroll area so it stays pinned while content scrolls */}
-      <NavCircleButton
-        onClick={() => navigate('/perspectives')}
-        style={styles.backCircle}
-      />
-
       <div style={styles.scrollArea}>
-        <div style={styles.hero}>
+        <section style={styles.hero}>
           <img
-            src={
-              perspective.imageUrl ||
-              'https://images.unsplash.com/photo-1593113598332-cd59a93a9c98?auto=format&fit=crop&w=1200&q=80'
-            }
+            src={perspective.imageUrl}
             alt={perspective.name}
             style={styles.heroImage}
           />
+          <div style={styles.heroOverlay} />
 
-          <div style={styles.mapPreviewCard}>
-            <div style={styles.mapPreviewInner}>
-              <Map
-                key="thumb-map"
-                mapboxAccessToken={MAPBOX_TOKEN}
-                initialViewState={{
-                  longitude: mapCenter.longitude,
-                  latitude: mapCenter.latitude,
-                  zoom: 14,
-                }}
-                style={styles.miniMap}
-                mapStyle="mapbox://styles/mapbox/streets-v12"
-                attributionControl={false}
-                dragPan={false}
-                scrollZoom={false}
-                doubleClickZoom={false}
-                touchZoomRotate={false}
-                keyboard={false}
-                interactive={false}
-              >
-                <Source id="route" type="geojson" data={routeGeoJSON}>
-                  <Layer {...routeLayer} />
-                </Source>
+          <NavCircleButton
+            onClick={() => navigate('/perspectives')}
+            style={styles.backCircle}
+          />
 
-                {perspective.location && (
-                  <Marker
-                    longitude={perspective.location[1]}
-                    latitude={perspective.location[0]}
-                    anchor="bottom"
-                  >
-                    <div style={styles.markerDot} />
-                  </Marker>
-                )}
-              </Map>
-            </div>
-          </div>
-
-          <div style={styles.heroTitleWrap}>
+          <div style={styles.heroTextBlock}>
             <h1 style={styles.heroTitle}>
-              {perspective.featuredShortTitle || perspective.name}
+              <span style={styles.redText}>PROTEST</span>
+              <span style={styles.whiteText}> and</span>
+              <br />
+              <span style={styles.redText}>CONFLICT</span>
             </h1>
+
+            <p style={styles.locationText}>IN Capitol Hill</p>
+
+            <p style={styles.heroDescription}>
+              {perspective.fullBio}
+            </p>
           </div>
-        </div>
+        </section>
 
-        <div style={styles.content}>
-          <h2 style={styles.sectionTitle}>Description</h2>
+        <section style={styles.content}>
+          <h2 style={styles.sectionTitle}>Perspective</h2>
 
-          <div style={styles.metaRow}>
-            <div style={styles.metaItem}>
-              <div style={styles.metaIcon}>◔</div>
-              <div>
-                <p style={styles.metaLabel}>Time</p>
-                <p style={styles.metaValue}>{durationText}</p>
-              </div>
+          <div style={styles.perspectiveRow}>
+            <img
+              src={perspective.imageUrl}
+              alt={perspective.name}
+              style={styles.avatar}
+            />
+
+            <div style={styles.personText}>
+              <h3 style={styles.personName}>
+                {perspective.name === 'Westlake' ? 'Jordan XXX' : `${perspective.name} XXX`}
+              </h3>
+              <p style={styles.personRole}>
+                {perspective.role || 'Community Volunteer'}
+              </p>
             </div>
 
-            <div style={styles.metaItem}>
-              <div style={styles.metaIcon}>⌖</div>
-              <div>
-                <p style={styles.metaLabel}>Taps</p>
-                <p style={styles.metaValue}>{tapCount}</p>
-              </div>
-            </div>
+            <button
+              style={styles.playButton}
+              disabled={audioError || !perspective.audioUrl}
+              onClick={playAudio}
+              aria-label="Play audio"
+            >
+              ▶
+            </button>
           </div>
 
-          <p style={styles.descriptionText}>{perspective.fullBio}</p>
-        </div>
-      </div>
+          <p style={styles.bioText}>
+            {perspective.name === 'Westlake'
+              ? 'Alex joined community supply efforts during the CHOP protests and spent much of his time helping organize food distribution and mutual aid stations around Westlake.'
+              : perspective.shortBio}
+          </p>
 
-      <div style={styles.audioBar}>
-        <div style={styles.audioInfo}>
-          <p style={styles.audioLabel}>{audioError ? 'Missing audio file' : 'Preview'}</p>
-          <p style={styles.audioTime}>{audioError ? 'Unavailable' : `0:00 / ${audioDuration}`}</p>
-        </div>
+          <h2 style={styles.routeTitle}>Route Info</h2>
 
-        {perspective.audioUrl ? (
-          <button
-            disabled={audioError}
-            style={styles.playButton(audioError)}
-            onClick={() => {
-              const audio = document.getElementById('perspective-audio-player')
-              if (audio && !audioError) audio.play().catch(() => setAudioError(true))
-            }}
-          >
-            ▶
-          </button>
-        ) : (
-          <button style={styles.playButton(true)} disabled>
-            ▶
-          </button>
-        )}
+          <div style={styles.mapCard}>
+            <Map
+              mapboxAccessToken={MAPBOX_TOKEN}
+              initialViewState={{
+                longitude: mapCenter.longitude,
+                latitude: mapCenter.latitude,
+                zoom: 14,
+              }}
+              style={styles.map}
+              mapStyle="mapbox://styles/mapbox/streets-v12"
+              attributionControl={false}
+            >
+              <Source id="route" type="geojson" data={routeGeoJSON}>
+                <Layer {...routeLayer} />
+              </Source>
+
+              {perspective.location && (
+                <Marker
+                  longitude={perspective.location[1]}
+                  latitude={perspective.location[0]}
+                  anchor="bottom"
+                >
+                  <div style={styles.markerDot} />
+                </Marker>
+              )}
+            </Map>
+          </div>
+        </section>
       </div>
 
       {perspective.audioUrl && (
@@ -191,182 +181,155 @@ const styles = {
   page: {
     position: 'relative',
     height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    backgroundColor: '#f3f3f1',
+    backgroundColor: '#000',
     overflow: 'hidden',
+    color: '#fff',
   },
   scrollArea: {
-    flex: 1,
+    height: '100%',
     overflowY: 'auto',
     WebkitOverflowScrolling: 'touch',
+    backgroundColor: '#000',
   },
   hero: {
-  position: 'relative',
-  width: '100%',
-  height: 'min(360px, 45vh)', 
-  minHeight: '260px',         
-  overflow: 'hidden',
-  borderBottomLeftRadius: '36px',
-  borderBottomRightRadius: '36px',
-},
+    position: 'relative',
+    minHeight: '620px',
+    width: '100%',
+    overflow: 'hidden',
+  },
   heroImage: {
+    position: 'absolute',
+    inset: 0,
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    display: 'block',
+  },
+  heroOverlay: {
+    position: 'absolute',
+    inset: 0,
+    background:
+      'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.96) 100%)',
   },
   backCircle: {
     position: 'absolute',
-    top: '20px',
-    left: '20px',
-    cursor: 'pointer',
+    top: '24px',
+    left: '24px',
+    zIndex: 10,
+  },
+  heroTextBlock: {
+    position: 'absolute',
+    left: '30px',
+    right: '28px',
+    bottom: '28px',
+    zIndex: 2,
+    textAlign: 'right',
+  },
+  heroTitle: {
+    margin: 0,
+    fontSize: '44px',
+    lineHeight: 1.05,
+    fontWeight: 900,
+    letterSpacing: '-1px',
+  },
+  redText: {
+    color: '#d64532',
+  },
+  whiteText: {
+    color: '#fff',
+    fontWeight: 700,
+  },
+  locationText: {
+    margin: '8px 0 22px',
+    fontSize: '15px',
+    fontStyle: 'italic',
+    color: 'rgba(255,255,255,0.75)',
+  },
+  heroDescription: {
+    margin: 0,
+    textAlign: 'center',
+    fontSize: '16px',
+    lineHeight: 1.2,
+    fontWeight: 700,
+    color: '#fff',
+  },
+  content: {
+    padding: '28px 30px 48px',
+    backgroundColor: '#000',
+  },
+  sectionTitle: {
+    margin: '0 0 26px',
+    fontSize: '30px',
+    fontWeight: 900,
+    color: '#fff',
+  },
+  perspectiveRow: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 50,
+    gap: '22px',
+    marginBottom: '28px',
   },
-  mapPreviewCard: {
-    position: 'absolute',
-    right: '18px',
-    bottom: '26px',
-    width: '118px',
-    height: '118px',
-    borderRadius: '22px',
-    backgroundColor: '#ffffff',
-    padding: '4px',
-    boxShadow: '0 8px 18px rgba(0,0,0,0.2)',
-    zIndex: 2,
+  avatar: {
+    width: '120px',
+    height: '120px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    flexShrink: 0,
   },
-  mapPreviewInner: {
+  personText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  personName: {
+    margin: '0 0 18px',
+    fontSize: '24px',
+    fontWeight: 800,
+    color: '#fff',
+  },
+  personRole: {
+    margin: 0,
+    fontSize: '15px',
+    fontWeight: 600,
+    color: '#fff',
+  },
+  playButton: {
+    border: 'none',
+    background: 'transparent',
+    color: '#fff',
+    fontSize: '46px',
+    cursor: 'pointer',
+    lineHeight: 1,
+    padding: 0,
+  },
+  bioText: {
+    margin: '0 0 58px',
+    fontSize: '16px',
+    lineHeight: 1.25,
+    color: '#fff',
+  },
+  routeTitle: {
+    margin: '0 0 28px',
+    fontSize: '30px',
+    fontWeight: 900,
+    color: '#fff',
+  },
+  mapCard: {
     width: '100%',
-    height: '100%',
+    height: '350px',
     overflow: 'hidden',
-    borderRadius: '18px',
+    backgroundColor: '#ddd',
   },
-  miniMap: {
+  map: {
     width: '100%',
     height: '100%',
   },
   markerDot: {
-    width: '16px',
-    height: '16px',
+    width: '18px',
+    height: '18px',
     borderRadius: '50%',
-    backgroundColor: '#1560f2',
+    backgroundColor: '#4b8cff',
     border: '3px solid white',
     boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
   },
-  heroTitleWrap: {
-    position: 'absolute',
-    left: '20px',
-    bottom: '34px',
-    right: '150px',
-    maxWidth: 'calc(100% - 170px)',
-    zIndex: 2,
-  },
-  heroTitle: {
-    margin: 0,
-    color: '#fff',
-    fontSize: 'clamp(32px, 10vw, 42px)',
-    lineHeight: 1.02,
-    fontWeight: '800',
-    letterSpacing: '-1px',
-    wordBreak: 'break-word',
-  },
-  content: {
-    padding: '22px 20px 28px',
-  },
-  sectionTitle: {
-    fontSize: '30px',
-    lineHeight: 1.1,
-    fontWeight: '800',
-    color: '#000',
-    margin: '0 0 22px 0',
-  },
-  metaRow: {
-    display: 'flex',
-    gap: '34px',
-    marginBottom: '26px',
-  },
-  metaItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  metaIcon: {
-    width: '34px',
-    height: '34px',
-    borderRadius: '50%',
-    border: '2px solid #5c84ff',
-    color: '#5c84ff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    flexShrink: 0,
-  },
-  metaLabel: {
-    margin: 0,
-    fontSize: '12px',
-    color: '#9a9a9a',
-    fontWeight: '600',
-  },
-  metaValue: {
-    margin: 0,
-    fontSize: '18px',
-    color: '#2d2d2d',
-    fontWeight: '700',
-  },
-  descriptionText: {
-    margin: 0,
-    fontSize: '16px',
-    lineHeight: 1.28,
-    color: '#111',
-  },
-  audioBar: {
-    height: '80px',
-    minHeight: '80px',
-    backgroundColor: '#f8f8f8',
-    borderTop: '1px solid #d9d9d9',
-    padding: '14px 20px 18px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexShrink: 0,
-  },
-  audioInfo: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  audioLabel: {
-    margin: 0,
-    fontSize: '13px',
-    color: '#a1a1a1',
-  },
-  audioTime: {
-    margin: '8px 0 0 0',
-    fontSize: '24px',
-    lineHeight: 1,
-    fontWeight: '800',
-    color: '#000',
-  },
-  playButton: disabled => ({
-    width: '49px',
-    height: '49px',
-    borderRadius: '50%',
-    border: 'none',
-    backgroundColor: '#C53E2C',
-    color: '#fff',
-    fontSize: '34px',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-    boxShadow: '0 6px 14px rgba(197, 62, 44, 0.30)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingLeft: '6px',
-  }),
   notFoundWrap: {
     padding: '24px',
   },
