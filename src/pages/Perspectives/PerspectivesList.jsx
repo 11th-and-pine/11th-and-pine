@@ -10,23 +10,23 @@ import labelMapImage from '../../assets/images/label-map.jpg'
 const LABELS = [
   {
     id: 'poi-westlake-plaza',
-    title: 'Westlake Plaza',
-    address: '4th Ave & Pine St',
-    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.',
+    title: 'Old Building',
+    address: 'xxxx Ave',
+    desc: 'A quiet street that once held voices, gatherings, and stories. Walk closer to uncover the layered memories left behind.',
     imageUrl: labelMapImage,
   },
   {
     id: 'poi-pike-pine',
-    title: 'Pike/Pine Corridor',
-    address: 'Pike St & Pine St',
-    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.',
+    title: 'Old Building',
+    address: 'xxxx Ave',
+    desc: 'A nearby site connected to community movement and public memory.',
     imageUrl: labelMapImage,
   },
   {
     id: 'poi-cal-anderson',
-    title: 'Cal Anderson Park',
-    address: '11th Ave & E Pine St',
-    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.',
+    title: 'Old Building',
+    address: 'xxxx Ave',
+    desc: 'A place marker for another layer of the walking archive.',
     imageUrl: labelMapImage,
   },
 ]
@@ -39,16 +39,30 @@ function ChevronIcon({ expanded }) {
         transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
       }}
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path
           d="M6 9L12 15L18 9"
-          stroke="#C53E2C"
+          stroke={expanded ? '#C53E2C' : '#505F76'}
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       </svg>
     </span>
+  )
+}
+
+function TabIcon({ src, active, style }) {
+  return (
+    <img
+      src={src}
+      alt=""
+      style={{
+        ...style,
+        opacity: active ? 1 : 0.45,
+        filter: active ? 'none' : 'saturate(0.45) brightness(1.12)',
+      }}
+    />
   )
 }
 
@@ -77,7 +91,7 @@ function PerspectivesList() {
 
     if (tab === 'westlake') setExpandedId(westlake?.id || null)
     if (tab === 'capital') setExpandedId(capitalHillItems[0]?.id || null)
-    if (tab === 'labels') setExpandedId(null)
+    if (tab === 'labels') setExpandedId('poi-westlake-plaza')
   }
 
   const handleCardClick = (id) => {
@@ -95,9 +109,9 @@ function PerspectivesList() {
             }}
             onClick={() => handleTabChange('westlake')}
           >
-            <img
+            <TabIcon
               src={perspectiveWestlakeIcon}
-              alt=""
+              active={activeTab === 'westlake'}
               style={styles.westlakeTabIcon}
             />
             <span style={styles.tabText}>Westlake</span>
@@ -110,9 +124,9 @@ function PerspectivesList() {
             }}
             onClick={() => handleTabChange('capital')}
           >
-            <img
+            <TabIcon
               src={perspectiveChopIcon}
-              alt=""
+              active={activeTab === 'capital'}
               style={styles.chopTabIcon}
             />
             <span style={styles.tabText}>Capitol Hill</span>
@@ -121,17 +135,32 @@ function PerspectivesList() {
           <button
             style={{
               ...styles.tab,
-              ...(activeTab === 'labels' ? styles.activeTabLabel : {}),
+              ...(activeTab === 'labels' ? styles.activeTab : {}),
             }}
             onClick={() => handleTabChange('labels')}
           >
-            <img
+            <TabIcon
               src={perspectiveLabelIcon}
-              alt=""
+              active={activeTab === 'labels'}
               style={styles.labelTabIcon}
             />
             <span style={styles.tabText}>Labels</span>
           </button>
+
+          <div style={styles.tabConnectorLine} />
+
+          <div style={styles.tabUnderlineWrap}>
+            {['westlake', 'capital', 'labels'].map((tab) => (
+              <div key={tab} style={styles.tabUnderlineSlot}>
+                <div
+                  style={{
+                    ...styles.tabUnderline,
+                    ...(activeTab === tab ? styles.tabUnderlineActive : {}),
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div style={styles.content}>
@@ -180,7 +209,16 @@ function PerspectivesList() {
   )
 }
 
-function RouteCard({ item, expanded, onToggle, onMoreInfo, onContinue, title, subtitle, progress }) {
+function RouteCard({
+  item,
+  expanded,
+  onToggle,
+  onMoreInfo,
+  onContinue,
+  title,
+  subtitle,
+  progress,
+}) {
   return (
     <div style={styles.card}>
       <div style={styles.cardHeader} onClick={onToggle}>
@@ -211,8 +249,8 @@ function RouteCard({ item, expanded, onToggle, onMoreInfo, onContinue, title, su
 
           <div style={styles.buttonRow}>
             <button style={styles.primaryButton} onClick={onContinue}>
-  {progress === 0 ? 'START WALKING' : 'CONTINUE WALKING'}
-</button>
+              {progress === 0 ? 'START WALKING' : 'CONTINUE WALKING'}
+            </button>
 
             <button style={styles.secondaryButton} onClick={onMoreInfo}>
               MORE INFO
@@ -226,7 +264,7 @@ function RouteCard({ item, expanded, onToggle, onMoreInfo, onContinue, title, su
 
 function LabelCard({ label, expanded, onToggle }) {
   return (
-    <div style={styles.labelCard}>
+    <div style={expanded ? styles.labelCardExpanded : styles.labelCard}>
       <div style={styles.labelHeader} onClick={onToggle}>
         <img
           src={label.imageUrl}
@@ -244,15 +282,8 @@ function LabelCard({ label, expanded, onToggle }) {
 
       {expanded && (
         <div style={styles.labelExpanded}>
+          <div style={styles.labelDivider} />
           <p style={styles.labelDesc}>{label.desc}</p>
-
-          <div style={styles.labelImageWrap}>
-            <img
-              src={label.imageUrl}
-              alt={label.title}
-              style={styles.labelLargeImage}
-            />
-          </div>
         </div>
       )}
     </div>
@@ -272,74 +303,98 @@ const styles = {
     overflowY: 'auto',
     WebkitOverflowScrolling: 'touch',
   },
+
   tabs: {
     display: 'grid',
-    gridTemplateColumns: '1.12fr 1.2fr 0.92fr',
+    gridTemplateColumns: '105px 105px 105px',
+    columnGap: '12px',
     alignItems: 'end',
-    padding: '58px 18px 0',
+    justifyContent: 'center',
+    padding: '42px 0 0',
     backgroundColor: '#F3F3F1',
+    position: 'relative',
   },
   tab: {
-    height: 46,
+    height: 34,
     minWidth: 0,
     padding: '0 0 10px',
     border: 'none',
-    borderBottom: '1.5px solid rgba(197, 62, 44, 0.35)',
     background: 'transparent',
-    color: 'rgba(197, 62, 44, 0.5)',
+    color: 'rgba(197, 62, 44, 0.45)',
     fontSize: '14px',
-    fontStyle: 'normal',
     fontWeight: 700,
-    lineHeight: 'normal',
     cursor: 'pointer',
     display: 'flex',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: '4px',
+    gap: '5px',
     whiteSpace: 'nowrap',
-    overflow: 'visible',
+    position: 'relative',
+    zIndex: 2,
   },
   activeTab: {
     color: '#C53E2C',
-    borderBottom: '3px solid #C53E2C',
-  },
-  activeTabLabel: {
-    color: '#C53E2C',
-    borderBottom: '3px solid #C53E2C',
   },
   tabText: {
     color: 'currentColor',
     fontSize: '14px',
-    fontStyle: 'normal',
     fontWeight: 700,
-    lineHeight: 'normal',
+    lineHeight: 1,
     flexShrink: 0,
-    transform: 'translateY(2px)',
   },
   westlakeTabIcon: {
-    width: '45px',
-    height: '30px',
-    aspectRatio: '3 / 2',
-    objectFit: 'cover',
+    width: '30px',
+    height: '20px',
+    objectFit: 'contain',
     flexShrink: 0,
-    transform: 'translateY(6px)',
   },
   chopTabIcon: {
-    width: '12px',
-    height: '12px',
+    width: '18px',
+    height: '18px',
+    objectFit: 'contain',
     flexShrink: 0,
   },
   labelTabIcon: {
-    width: '30px',
+    width: '20px',
     height: '20px',
-    aspectRatio: '3 / 2',
-    objectFit: 'cover',
+    objectFit: 'contain',
     flexShrink: 0,
-    transform: 'translateY(5px)',
   },
+  tabConnectorLine: {
+    position: 'absolute',
+    left: '31px',
+    right: '60px',
+    bottom: 0,
+    height: '1px',
+    backgroundColor: 'rgba(197, 62, 44, 0.40)',
+    zIndex: 0,
+  },
+  tabUnderlineWrap: {
+    position: 'absolute',
+    left: '31px',
+    right: '31px',
+    bottom: 0,
+    display: 'grid',
+    gridTemplateColumns: '97px 97px 97px',
+    columnGap: '20px',
+    zIndex: 1,
+  },
+  tabUnderlineSlot: {
+    width: '97px',
+  },
+  tabUnderline: {
+    height: '3px',
+    width: '97px',
+    backgroundColor: 'rgba(197, 62, 44, 0.40)',
+  },
+  tabUnderlineActive: {
+    backgroundColor: '#C53E2C',
+  },
+
   content: {
-    padding: '28px 18px 110px',
+    padding: '30px 31px 110px',
   },
+
   card: {
     backgroundColor: '#ffffff',
     borderRadius: '14px',
@@ -449,25 +504,34 @@ const styles = {
     fontSize: '12px',
     cursor: 'pointer',
   },
+
   labelCard: {
     backgroundColor: '#ffffff',
-    borderRadius: '14px',
-    marginBottom: '18px',
-    boxShadow: '0 4px 10px rgba(15, 23, 42, 0.12)',
+    borderRadius: '12px',
+    marginBottom: '20px',
+    boxShadow: '0 4px 2px rgba(161, 161, 161, 0.25)',
+    overflow: 'hidden',
+  },
+  labelCardExpanded: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    marginBottom: '20px',
+    boxShadow: '0 4px 2px rgba(161, 161, 161, 0.25)',
     overflow: 'hidden',
   },
   labelHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '14px',
-    padding: '16px',
+    gap: '18px',
+    padding: '16px 16px 14px',
     cursor: 'pointer',
   },
   labelThumbnail: {
-    width: '46px',
-    height: '46px',
-    borderRadius: '50%',
+    width: '48px',
+    height: '48px',
+    borderRadius: '4px',
     objectFit: 'cover',
+    opacity: 0.9,
     flexShrink: 0,
   },
   labelText: {
@@ -476,39 +540,31 @@ const styles = {
   },
   labelTitle: {
     margin: 0,
-    fontSize: '20px',
-    fontWeight: 800,
-    color: '#111',
+    fontSize: '18px',
+    fontWeight: 500,
+    color: '#000',
   },
   labelAddress: {
-    margin: '4px 0 0',
+    margin: '10px 0 0',
     fontSize: '14px',
-    fontStyle: 'normal',
     fontWeight: 400,
-    lineHeight: 'normal',
     color: '#505F76',
   },
   labelExpanded: {
-    padding: '0 18px 18px',
+    padding: '0 23px 20px',
+  },
+  labelDivider: {
+    width: '100%',
+    height: '1px',
+    backgroundColor: '#505F76',
+    margin: '0 0 22px',
   },
   labelDesc: {
-    margin: '0 0 12px',
+    margin: 0,
     fontSize: '14px',
-    lineHeight: 1.25,
-    color: '#8b8b8b',
-  },
-  labelImageWrap: {
-    position: 'relative',
-    height: '470px',
-    borderRadius: '26px',
-    overflow: 'hidden',
-    boxShadow: '0 4px 10px rgba(15, 23, 42, 0.15)',
-  },
-  labelLargeImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block',
+    fontWeight: 400,
+    lineHeight: '15.68px',
+    color: '#505F76',
   },
 }
 
