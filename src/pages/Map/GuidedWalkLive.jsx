@@ -8,8 +8,8 @@ import NavCircleButton from '../../components/NavCircleButton'
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 
-const DEFAULT_ROUTE_COLOR = '#5272FF'
 const PRIMARY_BUTTON_COLOR = '#C53E2C'
+const DEFAULT_ROUTE_COLOR = PRIMARY_BUTTON_COLOR
 const WRONG_ROUTE_COLOR = '#ef4444'
 
 // GPS thresholds (feet). Tune after first field test.
@@ -24,13 +24,15 @@ const ARRIVED_FT = 50
 
 const INITIAL_ZOOM = 16
 const FOLLOW_ZOOM = 17.5
+const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 
 const WESTLAKE_ROUTE = [
-  [47.61208726167953, -122.33701558200671], // Westlake Center
+  [47.61246495850918, -122.33745074674492], // Westlake Tower
   [47.6117017475211, -122.33664367843423],
   [47.61217739456354, -122.33554583325099],
   [47.61311511374411, -122.33330990771319],
   [47.61357524872394, -122.33220631461666],
+  [47.613380, -122.331806],
   [47.61528546767674, -122.32803424183338],
   [47.61532231916068, -122.32569616528335],
   [47.61534637433494, -122.31998484534672], // Cal Anderson Park
@@ -48,6 +50,24 @@ const POIS = [
   },
   {
     id: 2,
+    position: [47.61246495850918, -122.33745074674492],
+    audioUrl: '/audio/westlake-tower.mp3',
+    name: 'Westlake Tower',
+    title: 'Westlake Tower',
+    desc: 'A landmark of Seattle\'s changing skyline that reflects the city\'s growth and shifting identity.',
+    ttsText: 'You are near Westlake Tower.'
+  },
+  {
+    id: 3,
+    position: [47.613380, -122.331806],
+    audioUrl: '/audio/paramount-theatre.mp3',
+    name: 'Paramount Theatre',
+    title: 'A Cultural Landmark on Pine',
+    desc: 'Paramount Theatre anchors this stretch of Pine Street as a historic performance space and downtown landmark. Its presence connects the route to Seattle\'s long history of gathering, performance, and public life.',
+    ttsText: 'You are near Paramount Theatre on Pine Street.'
+  },
+  {
+    id: 4,
     position: [47.6136, -122.3318],
     audioUrl: '/audio/pike-pine.mp3',
     name: 'Pike/Pine Corridor',
@@ -56,7 +76,7 @@ const POIS = [
     ttsText: 'You are moving through the Pike Pine corridor. Pause here, look around, and then continue east toward Capitol Hill.'
   },
   {
-    id: 3,
+    id: 5,
     position: [47.6153, -122.3240],
     audioUrl: '/audio/cal-anderson.mp3',
     name: 'Cal Anderson Park',
@@ -67,6 +87,7 @@ const POIS = [
 ]
 
 const toLngLat = ([lat, lng]) => [lng, lat]
+const toLatLng = ([lng, lat]) => [lat, lng]
 
 function makeInitialViewState(route) {
   return {
@@ -190,6 +211,8 @@ export default function GuidedWalkLive() {
   const branchRoute = location.state ? location.state.route : null
   const route = branchRoute ? branchRoute.path : WESTLAKE_ROUTE
   const routeColor = branchRoute ? branchRoute.color : DEFAULT_ROUTE_COLOR
+  const [directionsRoute, setDirectionsRoute] = useState(null)
+  const plannedRoute = directionsRoute || route
 
   // Real GPS state
   const [userLocation, setUserLocation] = useState(null)   // [lat, lng]
@@ -221,7 +244,7 @@ export default function GuidedWalkLive() {
 
   // Derived: is the user currently off-route? Computed every render, no state.
   const offRoute = userLocation && !done
-    ? distanceToRoute(userLocation, route) > OFF_ROUTE_FT
+    ? distanceToRoute(userLocation, plannedRoute) > OFF_ROUTE_FT
     : false
 
   // Audio player state — identical to GuidedWalk.jsx
@@ -233,7 +256,7 @@ export default function GuidedWalkLive() {
   const [audioError, setAudioError] = useState(false)
   const [usingTTS, setUsingTTS] = useState(false)
 
-  const currentPoint = userLocation || route[0]
+  const currentPoint = userLocation || plannedRoute[0]
 
   const stopSpeech = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -338,7 +361,7 @@ export default function GuidedWalkLive() {
 
         // ── Arrival detection ──
         if (!doneRef.current) {
-          const endpoint = route[route.length - 1]
+          const endpoint = plannedRoute[plannedRoute.length - 1]
           if (distanceFeet(next, endpoint) < ARRIVED_FT) {
             setDone(true)
           }
@@ -346,7 +369,7 @@ export default function GuidedWalkLive() {
 
         // ── Off-route alert ──
         if (!doneRef.current) {
-          const isOff = distanceToRoute(next, route) > OFF_ROUTE_FT
+          const isOff = distanceToRoute(next, plannedRoute) > OFF_ROUTE_FT
           if (isOff && !alertDismissedRef.current && !offRouteAlertRef.current) {
             setOffRouteAlert(true)
             if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300])
@@ -372,6 +395,54 @@ export default function GuidedWalkLive() {
         navigator.geolocation.clearWatch(watchIdRef.current)
         watchIdRef.current = null
       }
+    }
+  }, [plannedRoute])
+
+  useEffect(() => {
+    if (!MAPBOX_TOKEN || route.length < 2) {
+      return
+    }
+
+    const controller = new AbortController()
+    const coordinates = route.map(point => toLngLat(point).join(',')).join(';')
+    const params = new URLSearchParams({
+      access_token: MAPBOX_TOKEN,
+      geometries: 'geojson',
+      overview: 'full',
+      steps: 'false',
+    })
+
+    Promise.resolve()
+      .then(() => fetch(
+        `https://api.mapbox.com/directions/v5/${WALKING_DIRECTIONS_PROFILE}/${coordinates}?${params.toString()}`,
+        { signal: controller.signal },
+      ))
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Walking route request failed')
+        }
+
+        return response.json()
+      })
+      .then(data => {
+        const coordinatesLngLat = data.routes?.[0]?.geometry?.coordinates
+
+        if (!coordinatesLngLat?.length) {
+          throw new Error('Walking route missing geometry')
+        }
+
+        setDirectionsRoute(coordinatesLngLat.map(toLatLng))
+      })
+      .catch(error => {
+        if (error.name === 'AbortError') {
+          return
+        }
+
+        setDirectionsRoute(null)
+      })
+
+    return () => {
+      controller.abort()
     }
   }, [route])
 
@@ -412,6 +483,7 @@ export default function GuidedWalkLive() {
   const [prevRoute, setPrevRoute] = useState(route)
   if (prevRoute !== route) {
     setPrevRoute(route)
+    setDirectionsRoute(null)
     setDone(false)
     setOffRouteAlert(false)
     setAlertDismissed(false)
@@ -455,7 +527,7 @@ export default function GuidedWalkLive() {
   const traveled = gpsTrail.length >= 2
     ? gpsTrail
     : userLocation
-      ? route.slice(0, nearestRouteIndex(userLocation, route) + 1)
+      ? plannedRoute.slice(0, nearestRouteIndex(userLocation, plannedRoute) + 1)
       : []
 
   return (
@@ -465,13 +537,13 @@ export default function GuidedWalkLive() {
       <Map
         ref={mapRef}
         mapboxAccessToken={MAPBOX_TOKEN}
-        initialViewState={makeInitialViewState(route)}
+        initialViewState={makeInitialViewState(plannedRoute)}
         style={styles.map}
         mapStyle={MAP_STYLE}
         attributionControl={false}
       >
         {/* Full route — faint preview */}
-        <Source id="full-route" type="geojson" data={makeLine(route)}>
+        <Source id="full-route" type="geojson" data={makeLine(plannedRoute)}>
           <Layer
             id="full-route-line"
             type="line"
@@ -492,8 +564,8 @@ export default function GuidedWalkLive() {
 
         {/* Start marker */}
         <Marker
-          longitude={toLngLat(route[0])[0]}
-          latitude={toLngLat(route[0])[1]}
+          longitude={toLngLat(plannedRoute[0])[0]}
+          latitude={toLngLat(plannedRoute[0])[1]}
           anchor="center"
         >
           <div style={styles.routeMarker(routeColor)} />
@@ -501,8 +573,8 @@ export default function GuidedWalkLive() {
 
         {/* End marker */}
         <Marker
-          longitude={toLngLat(route[route.length - 1])[0]}
-          latitude={toLngLat(route[route.length - 1])[1]}
+          longitude={toLngLat(plannedRoute[plannedRoute.length - 1])[0]}
+          latitude={toLngLat(plannedRoute[plannedRoute.length - 1])[1]}
           anchor="center"
         >
           <div style={styles.routeMarker(routeColor)} />
@@ -1079,10 +1151,10 @@ const styles = {
   walkerDirection: {
     position: 'absolute',
     left: '50%',
-    bottom: '50%',
+    top: 3,
     width: 42.676,
     height: 39.393,
-    transform: 'translateX(-50%) rotate(-80deg)',
+    transform: 'translateX(-50%)',
     transformOrigin: '50% 100%',
     zIndex: 0,
     pointerEvents: 'none',

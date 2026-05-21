@@ -11,12 +11,6 @@ import ExploreRoutes from './pages/Map/ExploreRoutes'
 import PerspectivesList from './pages/Perspectives/PerspectivesList'
 import PerspectiveDetail from './pages/Perspectives/PerspectiveDetail'
 
-// Feature flag — set VITE_USE_GPS=true in .env.local for real GPS, otherwise
-// the simulated walk is used (better for development on a desktop).
-const WalkComponent = import.meta.env.VITE_USE_GPS === 'true'
-  ? GuidedWalkLive
-  : GuidedWalk
-
 function App() {
   return (
     <div className="phone-shell">
@@ -28,7 +22,7 @@ function App() {
         <Route path="/onboarding/3" element={<Onboarding3 />} />
         <Route path="/map/overview" element={<RouteOverview />} />
         <Route path="/map/navigate" element={<NavigateToStart />} />
-        <Route path="/map/walking" element={<WalkComponent />} />
+        <Route path="/map/walking" element={<GuidedWalkLive />} />
         {/* Always-on routes for testing both versions side-by-side */}
         <Route path="/map/walking/sim" element={<GuidedWalk />} />
         <Route path="/map/walking/live" element={<GuidedWalkLive />} />

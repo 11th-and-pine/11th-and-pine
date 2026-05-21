@@ -7,12 +7,13 @@ import NavCircleButton from '../../components/NavCircleButton'
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 
-const START_POS = [47.61208726167953, -122.33701558200671]
+const START_POS = [47.61246495850918, -122.33745074674492]
 
 const START_RADIUS_METERS = 80
 const AT_START_DISTANCE_KM = 0.08
 
 const INITIAL_ZOOM = 14
+const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 
 const toLngLat = ([lat, lng]) => [lng, lat]
 
@@ -66,6 +67,46 @@ function makeNavLine(userPos, startPos) {
   }
 }
 
+function makeRouteFeature(coordinates) {
+  return {
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates,
+    },
+  }
+}
+
+function getLineBounds(coordinates) {
+  const lngs = coordinates.map(point => point[0])
+  const lats = coordinates.map(point => point[1])
+
+  return [
+    [Math.min(...lngs), Math.min(...lats)],
+    [Math.max(...lngs), Math.max(...lats)],
+  ]
+}
+
+function formatDuration(seconds) {
+  if (!seconds || !Number.isFinite(seconds)) return null
+
+  const minutes = Math.max(1, Math.round(seconds / 60))
+
+  return `${minutes} min walk`
+}
+
+function formatDistance(meters) {
+  if (!meters || !Number.isFinite(meters)) return null
+
+  const miles = meters / 1609.344
+
+  if (miles < 0.1) {
+    return `${Math.round(meters)} m`
+  }
+
+  return `${miles.toFixed(1)} mi`
+}
+
 
 function distanceKm([lat1, lon1], [lat2, lon2]) {
   const earthRadiusKm = 6371
@@ -90,6 +131,9 @@ export default function NavigateToStart() {
   const startPos = route?.path?.[0] || START_POS
 
   const [userPos, setUserPos] = useState(null)
+  const [walkingRoute, setWalkingRoute] = useState(null)
+  const [directionsLoading, setDirectionsLoading] = useState(false)
+  const [directionsError, setDirectionsError] = useState(false)
   // Lazy-initialize so we don't need a setState-in-effect when the API is missing.
   const [gpsError, setGpsError] = useState(
     () => typeof navigator !== 'undefined' && !navigator.geolocation,
@@ -99,6 +143,13 @@ export default function NavigateToStart() {
   const atStart = dist !== null && dist < AT_START_DISTANCE_KM
 
   const mapCenter = userPos ? getMidpoint(userPos, startPos) : startPos
+  const routeFeature = walkingRoute?.geometry?.coordinates?.length > 1
+    ? walkingRoute
+    : userPos
+      ? makeNavLine(userPos, startPos)
+      : null
+  const routeDurationText = formatDuration(walkingRoute?.properties?.duration)
+  const routeDistanceText = formatDistance(walkingRoute?.properties?.distance)
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -122,14 +173,94 @@ export default function NavigateToStart() {
       return
     }
 
-    const midpoint = getMidpoint(userPos, startPos)
+    const coordinates = routeFeature?.geometry?.coordinates
+
+    if (coordinates?.length > 1) {
+      mapRef.current?.fitBounds(getLineBounds(coordinates), {
+        padding: {
+          top: 90,
+          right: 42,
+          bottom: 240,
+          left: 42,
+        },
+        duration: 600,
+      })
+      return
+    }
 
     mapRef.current?.flyTo({
-      center: toLngLat(midpoint),
+      center: toLngLat(getMidpoint(userPos, startPos)),
       zoom: INITIAL_ZOOM,
       duration: 600,
     })
-  }, [userPos, startPos])
+  }, [routeFeature, startPos, userPos])
+
+  useEffect(() => {
+    if (!userPos || !MAPBOX_TOKEN) {
+      return
+    }
+
+    const controller = new AbortController()
+    const [userLng, userLat] = toLngLat(userPos)
+    const [startLng, startLat] = toLngLat(startPos)
+    const coordinates = `${userLng},${userLat};${startLng},${startLat}`
+    const params = new URLSearchParams({
+      access_token: MAPBOX_TOKEN,
+      geometries: 'geojson',
+      overview: 'full',
+      steps: 'false',
+    })
+
+    Promise.resolve()
+      .then(() => {
+        setDirectionsLoading(true)
+        setDirectionsError(false)
+
+        return fetch(
+          `https://api.mapbox.com/directions/v5/${WALKING_DIRECTIONS_PROFILE}/${coordinates}?${params.toString()}`,
+          { signal: controller.signal },
+        )
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Directions request failed')
+        }
+
+        return response.json()
+      })
+      .then(data => {
+        const firstRoute = data.routes?.[0]
+
+        if (!firstRoute?.geometry?.coordinates?.length) {
+          throw new Error('Directions route missing')
+        }
+
+        setWalkingRoute({
+          ...makeRouteFeature(firstRoute.geometry.coordinates),
+          properties: {
+            distance: firstRoute.distance,
+            duration: firstRoute.duration,
+          },
+        })
+      })
+      .catch(error => {
+        if (error.name === 'AbortError') {
+          return
+        }
+
+        setWalkingRoute(null)
+        setDirectionsError(true)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setDirectionsLoading(false)
+        }
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [startPos, userPos])
 
   return (
     <div style={styles.page}>
@@ -143,14 +274,14 @@ export default function NavigateToStart() {
         mapStyle={MAP_STYLE}
         attributionControl={false}
       >
-        {/* Dashed line from user to start */}
-        {userPos && (
-          <Source id="nav-line" type="geojson" data={makeNavLine(userPos, startPos)}>
+        {/* Walking directions route from user to start. Falls back to a straight line if Directions fails. */}
+        {routeFeature && (
+          <Source id="nav-line" type="geojson" data={routeFeature}>
             <Layer
               id="nav-line-layer"
               type="line"
               layout={styles.routeLineLayout}
-              paint={styles.navLinePaint}
+              paint={walkingRoute ? styles.directionsRoutePaint : styles.fallbackNavLinePaint}
             />
           </Source>
         )}
@@ -246,28 +377,27 @@ export default function NavigateToStart() {
         )}
 
         <div style={styles.walkChoiceLabel}>
-          {atStart ? 'Choose how to begin' : 'Choose a test mode'}
+          {atStart ? 'Ready to begin' : 'Go to the starting point first'}
         </div>
 
-        <div style={styles.walkChoiceRow}>
-          <button
-            onClick={() => navigate('/map/walking/sim', {
-              state: route ? { route } : undefined,
-            })}
-            style={styles.simButton}
-          >
-            Simulation
-          </button>
+        {userPos && (
+          <div style={styles.routeStatusText(directionsError)}>
+            {directionsLoading && 'Finding walking route…'}
+            {!directionsLoading && !directionsError && routeDurationText && routeDistanceText && (
+              `${routeDurationText} • ${routeDistanceText}`
+            )}
+            {!directionsLoading && directionsError && 'Showing direct line to the starting point.'}
+          </div>
+        )}
 
-          <button
-            onClick={() => navigate('/map/walking/live', {
-              state: route ? { route } : undefined,
-            })}
-            style={styles.walkButton}
-          >
-            Walk
-          </button>
-        </div>
+        <button
+          onClick={() => navigate('/map/walking/live', {
+            state: route ? { route } : undefined,
+          })}
+          style={styles.walkButton}
+        >
+          Start Walk
+        </button>
       </div>
     </div>
   )
@@ -298,10 +428,16 @@ const styles = {
     'line-join': 'round',
   },
 
-  navLinePaint: {
+  directionsRoutePaint: {
+    'line-color': '#C53E2C',
+    'line-width': 5,
+    'line-opacity': 0.9,
+  },
+
+  fallbackNavLinePaint: {
     'line-color': '#C53E2C',
     'line-width': 2,
-    'line-opacity': 0.65,
+    'line-opacity': 0.55,
     'line-dasharray': [2.5, 2],
   },
 
@@ -450,23 +586,14 @@ const styles = {
     textAlign: 'center',
   },
 
-  walkChoiceRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 12,
-  },
-
-  simButton: {
-    width: '100%',
-    height: 52,
-    background: '#E7E7F4',
-    color: '#191B24',
-    borderRadius: 9999,
-    fontSize: 16,
-    fontWeight: 700,
-    cursor: 'pointer',
-    border: 'none',
-  },
+  routeStatusText: hasError => ({
+    minHeight: 18,
+    margin: '-2px 0 14px',
+    color: hasError ? '#9ca3af' : '#505F76',
+    fontSize: 12,
+    fontWeight: 600,
+    textAlign: 'center',
+  }),
 
   walkButton: {
     width: '100%',

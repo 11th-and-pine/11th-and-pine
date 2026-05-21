@@ -390,6 +390,16 @@ button, input, select, textarea, optgroup {
   position: absolute;
   inset: 0;
   background: rgba(255, 255, 255, 0.03);
+  z-index: 1;
+}
+
+.poi-card-image {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  height: 62%;
+  object-fit: cover;
+  filter: saturate(0.92);
 }
 
 .poi-card-icon {
@@ -427,6 +437,7 @@ button, input, select, textarea, optgroup {
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 2;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.75) 55%, transparent 100%);
   padding: 48px 28px 36px;
 }
@@ -452,15 +463,23 @@ button, input, select, textarea, optgroup {
   color: white;
   font-size: 26px;
   font-weight: 700;
-  margin: 0 0 10px;
+  margin: 0 0 6px;
   line-height: 1.2;
+}
+
+.poi-address {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .poi-description {
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
   line-height: 1.65;
-  margin: 0 0 26px;
+  margin: 0;
 }
 
 .overview-menu {

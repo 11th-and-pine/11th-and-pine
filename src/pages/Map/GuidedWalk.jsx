@@ -8,15 +8,16 @@ import NavCircleButton from '../../components/NavCircleButton'
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 
-const DEFAULT_ROUTE_COLOR = '#5272FF'
 const PRIMARY_BUTTON_COLOR = '#C53E2C'
+const DEFAULT_ROUTE_COLOR = PRIMARY_BUTTON_COLOR
 const WRONG_ROUTE_COLOR = '#ef4444'
 
 // Walk pacing — each "step" along the route advances every WALK_INTERVAL_MS.
 // POI audio windows (with current 2200ms):
 //   POI 1 (step 1) → POI 2 (step 3): 4.4s for Westlake Plaza audio
-//   POI 2 (step 3) → POI 3 (step 6): 6.6s for Pike/Pine audio
-//   POI 3 (step 6) → end       (step 7): 2.2s, but audio keeps playing past `done`
+//   POI 2 (step 4) → POI 3 (step 5): 2.2s for Paramount audio
+//   POI 3 (step 5) → POI 4 (step 7): 4.4s for Pike/Pine audio
+//   POI 4 (step 7) → end       (step 8): 2.2s, but audio keeps playing past `done`
 // Bump this if your recordings are longer than the windows above.
 const WALK_INTERVAL_MS = 2200
 const CAMERA_MOVE_DURATION = 1200
@@ -25,11 +26,12 @@ const INITIAL_ZOOM = 15.5
 
 
 const WESTLAKE_ROUTE = [
-  [47.61208726167953, -122.33701558200671], // Westlake Center
+  [47.61246495850918, -122.33745074674492], // Westlake Tower
   [47.6117017475211, -122.33664367843423],
   [47.61217739456354, -122.33554583325099],
   [47.61311511374411, -122.33330990771319],
   [47.61357524872394, -122.33220631461666],
+  [47.613380, -122.331806],
   [47.61528546767674, -122.32803424183338],
   [47.61532231916068, -122.32569616528335],
   [47.61534637433494, -122.31998484534672], // Cal Anderson Park
@@ -37,7 +39,7 @@ const WESTLAKE_ROUTE = [
 
 // ~10ft ≈ 0.000030 degrees latitude offset — walker drifts slightly off route
 const WRONG_PATH_ROUTE = [
-  [47.61208726167953, -122.33701558200671], // same start
+  [47.61246495850918, -122.33745074674492], // same start
   [47.61215, -122.33680], // slight drift
   [47.61240, -122.33590], // drifting further off
   [47.61290, -122.33450], // clearly off route
@@ -57,8 +59,27 @@ const POIS = [
   },
   {
     id: 2,
+    position: [47.61246495850918, -122.33745074674492],
+    audioUrl: '/audio/westlake-tower.mp3',
+    name: 'Westlake Tower',
+    title: 'Westlake Tower',
+    desc: 'A landmark of Seattle\'s changing skyline that reflects the city\'s growth and shifting identity.',
+    ttsText: 'You are near Westlake Tower.'
+  },
+  {
+    id: 3,
+    position: [47.613380, -122.331806],
+    triggerStep: 4,
+    audioUrl: '/audio/paramount-theatre.mp3',
+    name: 'Paramount Theatre',
+    title: 'A Cultural Landmark on Pine',
+    desc: 'Paramount Theatre anchors this stretch of Pine Street as a historic performance space and downtown landmark. Its presence connects the route to Seattle\'s long history of gathering, performance, and public life.',
+    ttsText: 'You are near Paramount Theatre on Pine Street.'
+  },
+  {
+    id: 4,
     position: [47.6136, -122.3318],
-    triggerStep: 3,
+    triggerStep: 5,
     audioUrl: '/audio/pike-pine.mp3',
     name: 'Pike/Pine Corridor',
     title: 'From Auto Row to Activism',
@@ -66,9 +87,9 @@ const POIS = [
     ttsText: 'You are moving through the Pike Pine corridor. Pause here, look around, and then continue east toward Capitol Hill.'
   },
   {
-    id: 3,
+    id: 5,
     position: [47.6153, -122.3240],
-    triggerStep: 6,
+    triggerStep: 7,
     audioUrl: '/audio/cal-anderson.mp3',
     name: 'Cal Anderson Park',
     title: 'The Autonomous Zone',
@@ -1135,10 +1156,10 @@ const styles = {
   walkerDirection: {
     position: 'absolute',
     left: '50%',
-    bottom: '50%',
+    top: 3,
     width: 42.676,
     height: 39.393,
-    transform: 'translateX(-50%) rotate(-80deg)',
+    transform: 'translateX(-50%)',
     transformOrigin: '50% 100%',
     zIndex: 0,
     pointerEvents: 'none',

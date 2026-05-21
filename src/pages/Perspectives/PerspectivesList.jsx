@@ -11,23 +11,26 @@ import labelMapImage3 from '../../assets/images/westlaketower.jpg'
 
 const LABELS = [
   {
-    id: 'poi-westlake-plaza',
+    id: 'poi-paramount-theatre',
     title: 'Paramount Theatre',
     address: '911 Pine St',
+    position: [47.613380, -122.331806],
     desc: 'A historic gathering place where entertainment, culture, and public life intersected in downtown Seattle. Explore how this landmark connects to stories of community, performance, and change.',
     imageUrl: labelMapImage,
   },
   {
-    id: 'poi-pike-pine',
+    id: 'poi-mcgraw-square',
     title: 'McGraw Square',
     address: '531 Stewart St Westlake Ave &, Stewart St',
+    position: [47.613032726771145, -122.33754194183771],
     desc: 'A busy public space shaped by movement, gathering, and urban transformation. Discover how this location connects people, transit, and evolving city life.',
     imageUrl: labelMapImage2,
   },
   {
-    id: 'poi-cal-anderson',
+    id: 'poi-westlake-tower',
     title: 'Westlake Tower',
     address: '1601 5th Ave',
+    position: [47.61246495850918, -122.33745074674492],
     desc: 'A landmark of Seattle’s changing skyline that reflects the city’s growth and shifting identity. Experience stories connected to development, memory, and life in downtown Seattle.',
     imageUrl: labelMapImage3,
   },
@@ -95,7 +98,7 @@ function PerspectivesList() {
 
     if (tab === 'westlake') setExpandedId(westlake?.id || null)
     if (tab === 'capital') setExpandedId(capitalHillItems[0]?.id || null)
-    if (tab === 'labels') setExpandedId('poi-westlake-plaza')
+    if (tab === 'labels') setExpandedId('poi-paramount-theatre')
   }
 
   const handleCardClick = (id) => {

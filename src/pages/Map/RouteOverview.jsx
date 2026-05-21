@@ -7,16 +7,20 @@ import BottomNav from '../../components/BottomNav'
 import westlakeCardImage from '../../assets/images/Westlake-card.png'
 import chopCardImage from '../../assets/images/CHOP-card.png'
 import introIcon from '../../assets/images/intro-icon.png'
+import paramountImage from '../../assets/images/Paramounttheatre.jpg'
+import westlakeTowerImage from '../../assets/images/westlaketower.jpg'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const INITIAL_VIEW_STATE = {longitude: -122.328, latitude: 47.6148, zoom: 15}
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
+const PRIMARY_ROUTE_COLOR = '#C53E2C'
+const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 const ROUTE_LINE_LAYOUT = {
   'line-cap': 'round',
   'line-join': 'round',
 }
 const MAIN_ROUTE_PAINT = {
-  'line-color': '#84C4FF',
+  'line-color': PRIMARY_ROUTE_COLOR,
   'line-width': 5,
   'line-opacity': 0.9,
 }
@@ -41,11 +45,12 @@ const HIT_TARGET_PAINT = {
 }
 
 const WESTLAKE_ROUTE = [
-  [47.61208726167953, -122.33701558200671],
+  [47.61246495850918, -122.33745074674492],
   [47.6117017475211, -122.33664367843423],
   [47.61217739456354, -122.33554583325099],
   [47.61311511374411, -122.33330990771319],
   [47.61357524872394, -122.33220631461666],
+  [47.613380, -122.331806],
   [47.61528546767674, -122.32803424183338],
   [47.61532231916068, -122.32569616528335],
   [47.61534637433494, -122.31998484534672]
@@ -65,8 +70,9 @@ const CHOP_ROUTES = [
     [47.615189438501694, -122.318284960829],
     [47.61518751104897, -122.31702045803209],
     [47.61507232602374, -122.31699950222341],
-    [47.61756130800152, -122.31705670186719],
-    [47.617590861940066, -122.31830937728371]
+    [47.615104, -122.316990],
+    [47.61507932004624, -122.31704771348437],
+    [47.616317, -122.317007]
   ]},
   {
     color: '#8b5cf6',
@@ -74,9 +80,6 @@ const CHOP_ROUTES = [
     [47.61534637433494, -122.31998484534672],
     [47.6153546928591, -122.31972629234374],
     [47.616353487308146, -122.31971489484106],
-    [47.61669915254774, -122.31993723533854],
-    [47.61694097312205, -122.31973907492669],
-    [47.61699624623915, -122.3191343440146],
     [47.61803690317238, -122.31941907806251],
     [47.618674847206655, -122.320057007748]
   ]},
@@ -85,6 +88,7 @@ const CHOP_ROUTES = [
     path: [
     [47.61534637433494, -122.31998484534672],
     [47.61537792391303, -122.31834587334546],
+    [47.615328, -122.318167],
     [47.61644970344747, -122.31829245310354],
     [47.618667480923264, -122.3183265120806],
     [47.61871203860535, -122.31707799892192]
@@ -114,49 +118,69 @@ const CHOP_ROUTES = [
 const POIS = [
   {
     id: 1,
-    position: [47.6120, -122.3358],
-    name: 'Westlake Plaza',
-    title: 'Where the March Began',
-    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.'
+    position: [47.61246495850918, -122.33745074674492],
+    name: 'Westlake Tower',
+    title: 'Westlake Tower',
+    address: '1601 5th Ave',
+    desc: 'A landmark of Seattle’s changing skyline that reflects the city’s growth and shifting identity. Experience stories connected to development, memory, and life in downtown Seattle.',
+    imageUrl: westlakeTowerImage,
   },
   {
     id: 2,
-    position: [47.6136, -122.3318],
-    name: 'Pike/Pine Corridor',
-    title: 'From Auto Row to Activism',
-    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.'
-  },
-  {
-    id: 3,
-    position: [47.6153, -122.3240],
-    name: 'Cal Anderson Park',
-    title: 'The Autonomous Zone',
-    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.'
+    position: [47.613380, -122.331806],
+    name: 'Paramount Theatre',
+    title: 'Paramount Theatre',
+    address: '911 Pine St',
+    desc: 'A historic gathering place where entertainment, culture, and public life intersected in downtown Seattle. Explore how this landmark connects to stories of community, performance, and change.',
+    imageUrl: paramountImage,
   }
 ]
 
 const CAPITOL_POIS = [
   {
-    ...POIS[2],
-    id: 'capitol-park',
-    position: [47.6172, -122.3194],
-    name: 'Cal Anderson Park',
-  },
-  {
-    ...POIS[1],
-    id: 'capitol-east',
-    position: [47.6163, -122.3180],
-    name: 'East Precinct',
-  },
-  {
-    ...POIS[0],
-    id: 'capitol-core',
-    position: [47.6152, -122.3207],
-    name: 'CHOP Core',
+    id: 'east-precinct',
+    position: [47.61507932004624, -122.31704771348437],
+    name: 'Seattle Police Department - East Precinct',
+    title: 'Seattle Police Department - East Precinct',
+    desc: 'A key civic landmark at the edge of the CHOP area.',
   },
 ]
 
 const toLngLat = ([lat, lng]) => [lng, lat]
+const toLatLng = ([lng, lat]) => [lat, lng]
+
+function makeLineFeature(path) {
+  return {
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates: path.map(toLngLat),
+    },
+  }
+}
+
+function getBoundsForPaths(paths) {
+  const allPoints = paths.flat()
+  const lngs = allPoints.map(point => point[1])
+  const lats = allPoints.map(point => point[0])
+
+  return [
+    [Math.min(...lngs), Math.min(...lats)],
+    [Math.max(...lngs), Math.max(...lats)],
+  ]
+}
+
+function getDirectionsUrl(path) {
+  const coordinates = path.map(point => toLngLat(point).join(',')).join(';')
+  const params = new URLSearchParams({
+    access_token: MAPBOX_TOKEN,
+    geometries: 'geojson',
+    overview: 'full',
+    steps: 'false',
+  })
+
+  return `https://api.mapbox.com/directions/v5/${WALKING_DIRECTIONS_PROFILE}/${coordinates}?${params.toString()}`
+}
 
 function MenuGlyph() {
   return (
@@ -276,21 +300,6 @@ function SidebarIcon({ type }) {
   return null
 }
 
-function getRouteBounds(area = 'westlake') {
-  const allPoints = area === 'capitol'
-    ? CHOP_ROUTES.flatMap(route => route.path)
-    : WESTLAKE_ROUTE
-
-  const lngs = allPoints.map(point => point[1])
-  const lats = allPoints.map(point => point[0])
-
-  return [
-    [Math.min(...lngs), Math.min(...lats)],
-    [Math.max(...lngs), Math.max(...lats)],
-  ]
-}
-
-
 export default function RouteOverview() {
   const navigate = useNavigate()
   const mapRef = useRef()
@@ -299,13 +308,72 @@ export default function RouteOverview() {
   const [downloadPromptOpen, setDownloadPromptOpen] = useState(false)
   const [selectedArea, setSelectedArea] = useState('westlake')
   const [selectedChopRouteIndex, setSelectedChopRouteIndex] = useState(null)
+  const [directionsPaths, setDirectionsPaths] = useState({})
 
   const isCapitolSelected = selectedArea === 'capitol'
   const displayPOIS = isCapitolSelected ? CAPITOL_POIS : POIS
+  const westlakeDisplayPath = directionsPaths.westlake || WESTLAKE_ROUTE
+  const getChopDisplayPath = useCallback(
+    index => directionsPaths[`chop-${index}`] || CHOP_ROUTES[index].path,
+    [directionsPaths],
+  )
 
   const interactiveLayerIds = isCapitolSelected
     ? CHOP_ROUTES.map((_, i) => `explore-hit-${i}`)
     : []
+
+  useEffect(() => {
+    if (!MAPBOX_TOKEN) {
+      return
+    }
+
+    const controller = new AbortController()
+    const routeRequests = [
+      ['westlake', WESTLAKE_ROUTE],
+      ...CHOP_ROUTES.map((route, index) => [`chop-${index}`, route.path]),
+    ]
+
+    Promise.all(
+      routeRequests.map(([key, path]) => (
+        fetch(getDirectionsUrl(path), { signal: controller.signal })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Directions request failed for ${key}`)
+            }
+
+            return response.json()
+          })
+          .then(data => {
+            const coordinates = data.routes?.[0]?.geometry?.coordinates
+
+            if (!coordinates?.length) {
+              throw new Error(`Directions geometry missing for ${key}`)
+            }
+
+            return [key, coordinates.map(toLatLng)]
+          })
+          .catch(error => {
+            if (error.name === 'AbortError') {
+              return null
+            }
+
+            return [key, path]
+          })
+      )),
+    )
+      .then(results => {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        const nextPaths = Object.fromEntries(results.filter(Boolean))
+        setDirectionsPaths(nextPaths)
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [])
 
   function handleMapClick(e) {
     if (!isCapitolSelected) return
@@ -323,8 +391,12 @@ export default function RouteOverview() {
       return
     }
 
+    const paths = area === 'capitol'
+      ? CHOP_ROUTES.map((_, index) => getChopDisplayPath(index))
+      : [westlakeDisplayPath]
+
     mapRef.current.fitBounds(
-      getRouteBounds(area),
+      getBoundsForPaths(paths),
       {
         padding: area === 'capitol'
           ? {
@@ -342,7 +414,7 @@ export default function RouteOverview() {
         duration,
       },
     )
-  }, [])
+  }, [getChopDisplayPath, westlakeDisplayPath])
 
   useEffect(() => {
     fitMapToArea(selectedArea, 500)
@@ -387,18 +459,13 @@ export default function RouteOverview() {
         >
           {CHOP_ROUTES.map((route, index) => {
             const isSelected = selectedChopRouteIndex === index
+            const routePath = getChopDisplayPath(index)
             return (
               <Source
                 key={index}
                 id={`explore-${index}`}
                 type="geojson"
-                data={{
-                  type: 'Feature',
-                  geometry: {
-                    type: 'LineString',
-                    coordinates: route.path.map(toLngLat),
-                  }
-                }}
+                data={makeLineFeature(routePath)}
               >
                 <Layer
                   id={`explore-layer-${index}`}
@@ -420,13 +487,7 @@ export default function RouteOverview() {
           <Source
             id="main-route"
             type="geojson"
-            data={{
-              type: 'Feature',
-              geometry: {
-                type: 'LineString',
-                coordinates: WESTLAKE_ROUTE.map(toLngLat),
-              },
-            }}
+            data={makeLineFeature(westlakeDisplayPath)}
           >
             <Layer
               id="main-route-layer"
@@ -496,9 +557,17 @@ export default function RouteOverview() {
         <div onClick={() => setOpenPOI(null)} className="poi-overlay">
           <div onClick={e => e.stopPropagation()} className="poi-card">
             <div className="poi-card-texture" />
-            <div className="poi-card-icon">
-              <PinIcon size={72} />
-            </div>
+            {openPOI.imageUrl ? (
+              <img
+                className="poi-card-image"
+                src={openPOI.imageUrl}
+                alt={openPOI.title}
+              />
+            ) : (
+              <div className="poi-card-icon">
+                <PinIcon size={72} />
+              </div>
+            )}
 
             <button
               onClick={() => setOpenPOI(null)}
@@ -512,13 +581,19 @@ export default function RouteOverview() {
                 <PinIcon size={14} shadow={false} />
 
                 <span className="poi-location-text">
-                  {openPOI.name}
+                  {openPOI.address || openPOI.name}
                 </span>
               </div>
 
               <h2 className="poi-title">
                 {openPOI.title}
               </h2>
+
+              {openPOI.address && (
+                <p className="poi-address">
+                  {openPOI.address}
+                </p>
+              )}
 
               <p className="poi-description">
                 {openPOI.desc}

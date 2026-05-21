@@ -1,16 +1,203 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import Map, { Layer, Marker, Source } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { getPerspectiveById } from '../../services/dataService'
+import { getPerspectiveById, getRouteById } from '../../services/dataService'
 import NavCircleButton from '../../components/NavCircleButton'
 import jordanProfile from '../../assets/images/jordan-profile.jpg'
-import routeInfoMap from '../../assets/images/Routeinfo.png'
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
+const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
+const PREVIEW_INTERVAL_MS = 700
+
+const FALLBACK_ROUTE_PATH = [
+  [47.61246495850918, -122.33745074674492],
+  [47.6117017475211, -122.33664367843423],
+  [47.61217739456354, -122.33554583325099],
+  [47.61311511374411, -122.33330990771319],
+  [47.61357524872394, -122.33220631461666],
+  [47.613380, -122.331806],
+  [47.61528546767674, -122.32803424183338],
+  [47.61532231916068, -122.32569616528335],
+  [47.61534637433494, -122.31998484534672],
+]
+
+const toLngLat = ([lat, lng]) => [lng, lat]
+
+function makeLine(points) {
+  const coordinates = points.length > 1
+    ? points.map(toLngLat)
+    : [toLngLat(points[0]), toLngLat(points[0])]
+
+  return {
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates,
+    },
+  }
+}
+
+function getBounds(points) {
+  const lngs = points.map(point => point[1])
+  const lats = points.map(point => point[0])
+
+  return [
+    [Math.min(...lngs), Math.min(...lats)],
+    [Math.max(...lngs), Math.max(...lats)],
+  ]
+}
+
+function RouteMiniSimulation({ route }) {
+  const mapRef = useRef(null)
+  const timerRef = useRef(null)
+  const [step, setStep] = useState(0)
+  const [playing, setPlaying] = useState(false)
+
+  const path = route?.id === 'main'
+    ? FALLBACK_ROUTE_PATH
+    : route?.stops?.length > 1
+    ? route.stops.map(stop => stop.position)
+    : FALLBACK_ROUTE_PATH
+  const previewPoint = path[Math.min(step, path.length - 1)]
+  const traveledPath = path.slice(0, Math.max(step + 1, 1))
+  const complete = step >= path.length - 1
+
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    clearInterval(timerRef.current)
+
+    if (!playing) {
+      return
+    }
+
+    timerRef.current = setInterval(() => {
+      setStep(currentStep => {
+        const nextStep = currentStep + 1
+
+        if (nextStep >= path.length - 1) {
+          setPlaying(false)
+          return path.length - 1
+        }
+
+        return nextStep
+      })
+    }, PREVIEW_INTERVAL_MS)
+
+    return () => {
+      clearInterval(timerRef.current)
+    }
+  }, [path.length, playing])
+
+  function handleMapLoad() {
+    mapRef.current?.fitBounds(getBounds(path), {
+      padding: 42,
+      duration: 0,
+    })
+  }
+
+  function togglePreview() {
+    if (complete) {
+      setStep(0)
+      setPlaying(true)
+      return
+    }
+
+    setPlaying(value => !value)
+  }
+
+  return (
+    <div style={styles.previewMapWrap}>
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={MAPBOX_TOKEN}
+        initialViewState={{
+          longitude: toLngLat(path[0])[0],
+          latitude: toLngLat(path[0])[1],
+          zoom: 14,
+        }}
+        mapStyle={MAP_STYLE}
+        style={styles.previewMap}
+        attributionControl={false}
+        interactive={false}
+        onLoad={handleMapLoad}
+      >
+        <Source id="preview-full-route" type="geojson" data={makeLine(path)}>
+          <Layer
+            id="preview-full-route-layer"
+            type="line"
+            layout={styles.previewLineLayout}
+            paint={styles.previewFullRoutePaint}
+          />
+        </Source>
+
+        <Source id="preview-traveled-route" type="geojson" data={makeLine(traveledPath)}>
+          <Layer
+            id="preview-traveled-route-layer"
+            type="line"
+            layout={styles.previewLineLayout}
+            paint={styles.previewTraveledRoutePaint}
+          />
+        </Source>
+
+        {route?.stops?.map(stop => (
+          <Marker
+            key={stop.id}
+            longitude={stop.position[1]}
+            latitude={stop.position[0]}
+            anchor="center"
+          >
+            <div style={styles.previewStopMarker} />
+          </Marker>
+        ))}
+
+        <Marker
+          longitude={path[0][1]}
+          latitude={path[0][0]}
+          anchor="center"
+        >
+          <div style={styles.previewStartMarker} />
+        </Marker>
+
+        <Marker
+          longitude={path[path.length - 1][1]}
+          latitude={path[path.length - 1][0]}
+          anchor="center"
+        >
+          <div style={styles.previewEndMarker} />
+        </Marker>
+
+        <Marker
+          longitude={previewPoint[1]}
+          latitude={previewPoint[0]}
+          anchor="center"
+        >
+          <div style={styles.previewUserMarker} />
+        </Marker>
+      </Map>
+
+      <button
+        type="button"
+        onClick={togglePreview}
+        style={styles.previewPlayButton}
+      >
+        {complete ? 'Replay Preview' : playing ? 'Pause Preview' : 'Preview Route'}
+      </button>
+    </div>
+  )
+}
 
 function PerspectiveDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
   const perspective = getPerspectiveById(Number(id))
   const [audioError, setAudioError] = useState(false)
+  const route = perspective ? getRouteById(perspective.routeId || 'main') : null
 
   if (!perspective) {
     return (
@@ -105,11 +292,7 @@ function PerspectiveDetail() {
           <h2 style={styles.routeTitle}>Route Info</h2>
 
           <div style={styles.mapCard}>
-            <img
-              src={routeInfoMap}
-              alt="Route info"
-              style={styles.routeImage}
-            />
+            <RouteMiniSimulation route={route} />
           </div>
         </section>
       </div>
@@ -270,11 +453,80 @@ const styles = {
     overflow: 'hidden',
     backgroundColor: '#000',
   },
-  routeImage: {
+  previewMapWrap: {
+    position: 'relative',
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
-    display: 'block',
+    overflow: 'hidden',
+    background: '#111',
+  },
+  previewMap: {
+    width: '100%',
+    height: '100%',
+  },
+  previewLineLayout: {
+    'line-cap': 'round',
+    'line-join': 'round',
+  },
+  previewFullRoutePaint: {
+    'line-color': '#EED05D',
+    'line-width': 5,
+    'line-opacity': 0.35,
+  },
+  previewTraveledRoutePaint: {
+    'line-color': '#C53E2C',
+    'line-width': 5,
+    'line-opacity': 0.95,
+  },
+  previewStopMarker: {
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    background: '#EED05D',
+    border: '2px solid #fff',
+    boxShadow: '0 2px 10px rgba(238, 208, 93, 0.55)',
+  },
+  previewStartMarker: {
+    width: 14,
+    height: 14,
+    borderRadius: '50%',
+    background: '#0C79FE',
+    border: '3px solid #fff',
+    boxShadow: '0 2px 12px rgba(12, 121, 254, 0.45)',
+  },
+  previewEndMarker: {
+    width: 14,
+    height: 14,
+    borderRadius: '50%',
+    background: '#C53E2C',
+    border: '3px solid #fff',
+    boxShadow: '0 2px 12px rgba(197, 62, 44, 0.55)',
+  },
+  previewUserMarker: {
+    width: 16,
+    height: 16,
+    borderRadius: '50%',
+    background: '#0C79FE',
+    border: '3px solid #fff',
+    boxShadow: '0 0 0 8px rgba(12, 121, 254, 0.18)',
+  },
+  previewPlayButton: {
+    position: 'absolute',
+    left: '50%',
+    bottom: 18,
+    transform: 'translateX(-50%)',
+    zIndex: 10,
+    minWidth: 138,
+    height: 42,
+    padding: '0 18px',
+    border: 0,
+    borderRadius: 999,
+    background: '#C53E2C',
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 800,
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.22)',
+    cursor: 'pointer',
   },
   notFoundWrap: {
     padding: '24px',
