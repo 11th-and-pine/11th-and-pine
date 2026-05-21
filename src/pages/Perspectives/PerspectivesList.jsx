@@ -6,28 +6,30 @@ import perspectiveWestlakeIcon from '../../assets/images/perspective-westlake-ic
 import perspectiveChopIcon from '../../assets/images/perspective-chop-icon.svg'
 import perspectiveLabelIcon from '../../assets/images/perspective-label-icon.png'
 import labelMapImage from '../../assets/images/label-map.jpg'
+import labelMapImage2 from '../../assets/images/McGraw.jpg'
+import labelMapImage3 from '../../assets/images/westlaketower.jpg'
 
 const LABELS = [
   {
     id: 'poi-westlake-plaza',
-    title: 'Old Building',
+    title: 'Old Building 1',
     address: 'xxxx Ave',
     desc: 'A quiet street that once held voices, gatherings, and stories. Walk closer to uncover the layered memories left behind.',
     imageUrl: labelMapImage,
   },
   {
     id: 'poi-pike-pine',
-    title: 'Old Building',
+    title: 'Old Building 2',
     address: 'xxxx Ave',
     desc: 'A nearby site connected to community movement and public memory.',
-    imageUrl: labelMapImage,
+    imageUrl: labelMapImage2,
   },
   {
     id: 'poi-cal-anderson',
-    title: 'Old Building',
+    title: 'Old Building 3',
     address: 'xxxx Ave',
     desc: 'A place marker for another layer of the walking archive.',
-    imageUrl: labelMapImage,
+    imageUrl: labelMapImage3,
   },
 ]
 
@@ -72,6 +74,7 @@ function PerspectivesList() {
 
   const [activeTab, setActiveTab] = useState('westlake')
   const [expandedId, setExpandedId] = useState('1')
+  const [imagePreviewLabel, setImagePreviewLabel] = useState(null)
 
   const westlake = perspectives.find(
     (p) =>
@@ -88,6 +91,7 @@ function PerspectivesList() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab)
+    setImagePreviewLabel(null)
 
     if (tab === 'westlake') setExpandedId(westlake?.id || null)
     if (tab === 'capital') setExpandedId(capitalHillItems[0]?.id || null)
@@ -199,12 +203,39 @@ function PerspectivesList() {
                 label={label}
                 expanded={expandedId === label.id}
                 onToggle={() => handleCardClick(label.id)}
+                onOpenImage={() => setImagePreviewLabel(label)}
               />
             ))}
         </div>
       </div>
 
       <BottomNav active="library" className="library-bottom-nav" />
+
+      {imagePreviewLabel && (
+        <div style={styles.imageOverlay} onClick={() => setImagePreviewLabel(null)}>
+          <div style={styles.imageModal} onClick={(e) => e.stopPropagation()}>
+            <img
+              src={imagePreviewLabel.imageUrl}
+              alt={imagePreviewLabel.title}
+              style={styles.modalImage}
+            />
+
+            <button
+              style={styles.closeButton}
+              onClick={() => setImagePreviewLabel(null)}
+            >
+              ×
+            </button>
+
+            <div style={styles.modalGradient} />
+
+            <div style={styles.modalText}>
+              <h2 style={styles.modalTitle}>{imagePreviewLabel.title}</h2>
+              <p style={styles.modalDesc}>{imagePreviewLabel.desc}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -262,7 +293,7 @@ function RouteCard({
   )
 }
 
-function LabelCard({ label, expanded, onToggle }) {
+function LabelCard({ label, expanded, onToggle, onOpenImage }) {
   return (
     <div style={expanded ? styles.labelCardExpanded : styles.labelCard}>
       <div style={styles.labelHeader} onClick={onToggle}>
@@ -270,6 +301,10 @@ function LabelCard({ label, expanded, onToggle }) {
           src={label.imageUrl}
           alt={label.title}
           style={styles.labelThumbnail}
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenImage()
+          }}
         />
 
         <div style={styles.labelText}>
@@ -292,11 +327,13 @@ function LabelCard({ label, expanded, onToggle }) {
 
 const styles = {
   page: {
+    position: 'relative',
     height: '100%',
     backgroundColor: '#F3F3F1',
     display: 'flex',
     flexDirection: 'column',
     color: '#111827',
+    overflow: 'hidden',
   },
   scrollArea: {
     flex: 1,
@@ -533,6 +570,7 @@ const styles = {
     objectFit: 'cover',
     opacity: 0.9,
     flexShrink: 0,
+    cursor: 'pointer',
   },
   labelText: {
     flex: 1,
@@ -565,6 +603,77 @@ const styles = {
     fontWeight: 400,
     lineHeight: '15.68px',
     color: '#505F76',
+  },
+
+  imageOverlay: {
+    position: 'absolute',
+    inset: 0,
+    zIndex: 3000,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingTop: '205px',
+    pointerEvents: 'auto',
+  },
+  imageModal: {
+    position: 'relative',
+    width: '297px',
+    height: '461px',
+    borderRadius: '0 0 36px 36px',
+    overflow: 'hidden',
+    boxShadow: '0 18px 28px rgba(0,0,0,0.28)',
+    backgroundColor: '#000',
+  },
+  modalImage: {
+    width: '297px',
+    height: '461px',
+    objectFit: 'cover',
+    display: 'block',
+  },
+  modalGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '190px',
+    background:
+      'linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.35), rgba(0,0,0,0))',
+    backdropFilter: 'blur(3px)',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: '18px',
+    right: '18px',
+    width: '32px',
+    height: '32px',
+    border: 'none',
+    background: 'transparent',
+    color: '#fff',
+    fontSize: '42px',
+    lineHeight: '28px',
+    cursor: 'pointer',
+    zIndex: 2,
+  },
+  modalText: {
+    position: 'absolute',
+    left: '26px',
+    right: '24px',
+    bottom: '42px',
+    color: '#fff',
+    zIndex: 2,
+  },
+  modalTitle: {
+    margin: '0 0 12px',
+    fontSize: '34px',
+    lineHeight: 1,
+    fontWeight: 800,
+  },
+  modalDesc: {
+    margin: 0,
+    fontSize: '22px',
+    lineHeight: 1.1,
+    fontWeight: 400,
   },
 }
 
