@@ -138,6 +138,9 @@ export default function NavigateToStart() {
   const [gpsError, setGpsError] = useState(
     () => typeof navigator !== 'undefined' && !navigator.geolocation,
   )
+  // Countdown shown after arriving at start; when it hits 0 we auto-navigate
+  // into the live walking screen so the user doesn't need to tap a button.
+  const [autoStartCountdown, setAutoStartCountdown] = useState(null)
 
   const dist = userPos ? distanceKm(userPos, startPos) : null
   const atStart = dist !== null && dist < AT_START_DISTANCE_KM
@@ -262,6 +265,36 @@ export default function NavigateToStart() {
     }
   }, [startPos, userPos])
 
+  // Auto-start the walk 5 seconds after the user arrives at the starting
+  // point. All state updates happen inside subscription callbacks (setInterval
+  // / setTimeout) — never synchronously in the effect body — so we stay
+  // compliant with react-hooks/set-state-in-effect.
+  useEffect(() => {
+    if (!atStart) return
+
+    let remaining = 5
+    // Seed the displayed countdown on the next microtask so the initial set
+    // happens in a subscription callback, not the effect body.
+    const initId = setTimeout(() => setAutoStartCountdown(remaining), 0)
+
+    const tickId = setInterval(() => {
+      remaining -= 1
+      if (remaining > 0) {
+        setAutoStartCountdown(remaining)
+      } else {
+        clearInterval(tickId)
+        navigate('/map/walking/live', {
+          state: route ? { route } : undefined,
+        })
+      }
+    }, 1000)
+
+    return () => {
+      clearTimeout(initId)
+      clearInterval(tickId)
+    }
+  }, [atStart, navigate, route])
+
   return (
     <div style={styles.page}>
       <style>{animationStyles}</style>
@@ -376,28 +409,37 @@ export default function NavigateToStart() {
           </div>
         )}
 
-        <div style={styles.walkChoiceLabel}>
-          {atStart ? 'Ready to begin' : 'Go to the starting point first'}
-        </div>
-
-        {userPos && (
-          <div style={styles.routeStatusText(directionsError)}>
-            {directionsLoading && 'Finding walking route…'}
-            {!directionsLoading && !directionsError && routeDurationText && routeDistanceText && (
-              `${routeDurationText} • ${routeDistanceText}`
-            )}
-            {!directionsLoading && directionsError && 'Showing direct line to the starting point.'}
+        {atStart ? (
+          <div style={styles.autoStartHint}>
+            Starting walk in {autoStartCountdown ?? 5} second
+            {(autoStartCountdown ?? 5) === 1 ? '' : 's'}…
           </div>
-        )}
+        ) : (
+          <>
+            <div style={styles.walkChoiceLabel}>
+              Go to the starting point first
+            </div>
 
-        <button
-          onClick={() => navigate('/map/walking/live', {
-            state: route ? { route } : undefined,
-          })}
-          style={styles.walkButton}
-        >
-          Start Walk
-        </button>
+            {userPos && (
+              <div style={styles.routeStatusText(directionsError)}>
+                {directionsLoading && 'Finding walking route…'}
+                {!directionsLoading && !directionsError && routeDurationText && routeDistanceText && (
+                  `${routeDurationText} • ${routeDistanceText}`
+                )}
+                {!directionsLoading && directionsError && 'Showing direct line to the starting point.'}
+              </div>
+            )}
+
+            <button
+              onClick={() => navigate('/map/walking/live', {
+                state: route ? { route } : undefined,
+              })}
+              style={styles.walkButton}
+            >
+              Start Walk
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -580,6 +622,14 @@ const styles = {
 
   walkChoiceLabel: {
     marginBottom: 10,
+    color: '#6b7280',
+    fontSize: 13,
+    fontWeight: 600,
+    textAlign: 'center',
+  },
+
+  autoStartHint: {
+    margin: '4px 0 18px',
     color: '#6b7280',
     fontSize: 13,
     fontWeight: 600,

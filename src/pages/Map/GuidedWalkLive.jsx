@@ -26,6 +26,26 @@ const INITIAL_ZOOM = 16
 const FOLLOW_ZOOM = 17.5
 const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 
+// Demo walking simulation — only active for the purple branch route.
+// We skip GPS, POI audio triggers, and off-route alerts in this mode; the
+// walker is just interpolated along the planned route at a realistic pace
+// so the screen can be shown during a demo without needing real movement.
+const SIM_ROUTE_COLOR = '#8b5cf6'
+const SIM_WALK_SPEED_MPS = 1.5   // real-life walking pace
+const SIM_TICK_MS = 200           // interpolation tick
+const SIM_FEET_TO_METERS = 0.3048
+const SIM_AUDIO_DURATION_SEC = 600 // fake 10-minute demo narration
+
+// Fake "POI" used purely so the audio bar has something to display while
+// the sim is running. No real audio is loaded — the bar is driven by
+// state we tick forward manually.
+const SIM_AUDIO_POI = {
+  id: 'sim-demo-audio',
+  title: 'Walking Narration',
+  name: 'Demo Audio',
+  audioUrl: null,
+}
+
 const WESTLAKE_ROUTE = [
   [47.61246495850918, -122.33745074674492], // Westlake Tower
   [47.6117017475211, -122.33664367843423],
@@ -211,20 +231,27 @@ export default function GuidedWalkLive() {
   const branchRoute = location.state ? location.state.route : null
   const route = branchRoute ? branchRoute.path : WESTLAKE_ROUTE
   const routeColor = branchRoute ? branchRoute.color : DEFAULT_ROUTE_COLOR
+  // Demo-only walking simulation: when the purple branch route is selected,
+  // bypass GPS and animate the walker along the planned route.
+  const isSimRoute = branchRoute?.color === SIM_ROUTE_COLOR
   const [directionsRoute, setDirectionsRoute] = useState(null)
   const plannedRoute = directionsRoute || route
 
-  // Real GPS state
-  const [userLocation, setUserLocation] = useState(null)   // [lat, lng]
+  // Real GPS state (or simulated state, in sim mode)
+  const [userLocation, setUserLocation] = useState(() =>
+    isSimRoute ? route[0] : null
+  )
   const [userHeading, setUserHeading] = useState(null)     // degrees, may be null
   const [gpsTrail, setGpsTrail] = useState([])             // raw breadcrumbs
   // Lazy initializer — checks browser capability at mount without needing
-  // to call setLocationError from inside an effect body.
-  const [locationError, setLocationError] = useState(() =>
-    typeof navigator !== 'undefined' && navigator.geolocation
+  // to call setLocationError from inside an effect body. Sim mode never
+  // needs GPS, so we always start with no error there.
+  const [locationError, setLocationError] = useState(() => {
+    if (isSimRoute) return null
+    return typeof navigator !== 'undefined' && navigator.geolocation
       ? null
       : 'This browser does not support geolocation.'
-  )
+  })
 
   const [done, setDone] = useState(false)
   const [openPOI, setOpenPOI] = useState(null)
@@ -238,6 +265,9 @@ export default function GuidedWalkLive() {
   const doneRef = useRef(false)
   const alertDismissedRef = useRef(false)
   const offRouteAlertRef = useRef(false)
+  // Mirrors the audioPlaying state so the sim interval (set up once) can
+  // check the latest play/pause status without restarting the interval.
+  const audioPlayingRef = useRef(false)
   useEffect(() => { doneRef.current = done }, [done])
   useEffect(() => { alertDismissedRef.current = alertDismissed }, [alertDismissed])
   useEffect(() => { offRouteAlertRef.current = offRouteAlert }, [offRouteAlert])
@@ -255,6 +285,7 @@ export default function GuidedWalkLive() {
   const [currentAudioPOI, setCurrentAudioPOI] = useState(null)
   const [audioError, setAudioError] = useState(false)
   const [usingTTS, setUsingTTS] = useState(false)
+  useEffect(() => { audioPlayingRef.current = audioPlaying }, [audioPlaying])
 
   const currentPoint = userLocation || plannedRoute[0]
 
@@ -317,6 +348,7 @@ export default function GuidedWalkLive() {
   // in a subscription callback, not in an effect body.
   // ──────────────────────────────────────────────────────────
   useEffect(() => {
+    if (isSimRoute) return              // sim mode handles position itself
     if (!navigator.geolocation) return  // locationError set via initializer
 
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -396,7 +428,120 @@ export default function GuidedWalkLive() {
         watchIdRef.current = null
       }
     }
-  }, [plannedRoute])
+  }, [plannedRoute, isSimRoute])
+
+  // ──────────────────────────────────────────────────────────
+  // Demo walking simulation (purple route only).
+  // Interpolates `userLocation` along `plannedRoute` at a real-life
+  // walking pace. Skips POI audio and off-route alerts — purely visual
+  // movement for demo recording / presentation.
+  // ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isSimRoute) return
+    if (!plannedRoute || plannedRoute.length < 2) return
+    if (doneRef.current) return
+
+    const path = plannedRoute
+
+    // Pre-compute segment lengths in meters
+    const segMeters = []
+    for (let i = 0; i < path.length - 1; i++) {
+      segMeters.push(distanceFeet(path[i], path[i + 1]) * SIM_FEET_TO_METERS)
+    }
+
+    let segIdx = 0
+    let segProg = 0 // 0..1 along the current segment
+    let seeded = false
+    let audioElapsedSec = 0 // fake-audio playhead, advanced per tick
+    const metersPerTick = SIM_WALK_SPEED_MPS * (SIM_TICK_MS / 1000)
+    const tickSec = SIM_TICK_MS / 1000
+
+    const id = setInterval(() => {
+      // First tick: seed position & trail at the route start, and prime
+      // the audio bar with a fake 10-min narration. We do this inside the
+      // interval (a subscription callback) rather than in the effect body
+      // so we don't violate react-hooks/set-state-in-effect.
+      if (!seeded) {
+        seeded = true
+        setUserLocation(path[0])
+        setGpsTrail([path[0]])
+        setLocationError(null)
+        // Prime the audio bar: fake POI, 10-min duration, "playing".
+        // No <audio> element is touched — we tick state forward manually.
+        setCurrentAudioPOI(SIM_AUDIO_POI)
+        setUsingTTS(false)
+        setAudioError(false)
+        setAudioDuration(SIM_AUDIO_DURATION_SEC)
+        setAudioCurrentTime(0)
+        setAudioProgress(0)
+        setAudioPlaying(true)
+        return
+      }
+
+      // Honor pause: if the user paused the audio bar, freeze both the
+      // walker and the fake audio playhead so they stay in sync.
+      if (!audioPlayingRef.current) return
+
+      // Advance the fake audio playhead
+      audioElapsedSec = Math.min(audioElapsedSec + tickSec, SIM_AUDIO_DURATION_SEC)
+      setAudioCurrentTime(audioElapsedSec)
+      setAudioProgress((audioElapsedSec / SIM_AUDIO_DURATION_SEC) * 100)
+
+      // Advance progress
+      const segLen = segMeters[segIdx] || 0
+      if (segLen > 0) {
+        segProg += metersPerTick / segLen
+      } else {
+        segProg = 1
+      }
+
+      // Roll over to next segments if we exceeded this one
+      while (segProg >= 1 && segIdx < path.length - 1) {
+        segProg -= 1
+        segIdx += 1
+        // If next segment exists, recompute progress against its length
+        if (segIdx < path.length - 1) {
+          const nextLen = segMeters[segIdx] || 0
+          if (nextLen > 0) {
+            segProg = segProg * (segMeters[segIdx - 1] || 0) / nextLen
+          } else {
+            segProg = 1
+          }
+        }
+      }
+
+      // Arrived at the end
+      if (segIdx >= path.length - 1) {
+        const end = path[path.length - 1]
+        setUserLocation(end)
+        setGpsTrail(prev =>
+          prev.length && distanceFeet(prev[prev.length - 1], end) < 3
+            ? prev
+            : [...prev, end]
+        )
+        setDone(true)
+        clearInterval(id)
+        return
+      }
+
+      const a = path[segIdx]
+      const b = path[segIdx + 1]
+      const pos = [
+        a[0] + (b[0] - a[0]) * segProg,
+        a[1] + (b[1] - a[1]) * segProg,
+      ]
+
+      setUserLocation(pos)
+      setGpsTrail(prev => {
+        if (prev.length === 0) return [pos]
+        const last = prev[prev.length - 1]
+        if (distanceFeet(last, pos) < 3) return prev
+        return [...prev, pos]
+      })
+    }, SIM_TICK_MS)
+
+    return () => clearInterval(id)
+  }, [isSimRoute, plannedRoute])
 
   useEffect(() => {
     if (!MAPBOX_TOKEN || route.length < 2) {
@@ -475,9 +620,11 @@ export default function GuidedWalkLive() {
       zoom: FOLLOW_ZOOM,
       pitch: 50,
       bearing: bearing ?? mapRef.current.getBearing?.() ?? 0,
-      duration: 1200,
+      // Sim mode ticks every ~200ms — keep the easeTo close to that so the
+      // camera flows smoothly instead of restarting a slow animation.
+      duration: isSimRoute ? 240 : 1200,
     })
-  }, [userLocation, userHeading, gpsTrail])
+  }, [userLocation, userHeading, gpsTrail, isSimRoute])
 
   // Reset state when route changes (same pattern as GuidedWalk.jsx)
   const [prevRoute, setPrevRoute] = useState(route)
@@ -721,6 +868,13 @@ export default function GuidedWalkLive() {
             <button
               disabled={!currentAudioPOI || audioError}
               onClick={() => {
+                // Sim mode: no real <audio> element backs the player; the
+                // play/pause button just toggles state, which the sim
+                // interval reads to freeze/resume both walker and playhead.
+                if (isSimRoute) {
+                  setAudioPlaying(prev => !prev)
+                  return
+                }
                 if (usingTTS) {
                   if (audioPlaying) {
                     window.speechSynthesis.pause()

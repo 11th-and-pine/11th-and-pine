@@ -297,6 +297,16 @@ function SidebarIcon({ type }) {
     )
   }
 
+  if (type === 'test') {
+    // Compass-style glyph for the navigation test entry
+    return (
+      <svg {...commonProps}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M15.5 8.5l-2 5.5-5.5 2 2-5.5 5.5-2Z" />
+      </svg>
+    )
+  }
+
   return null
 }
 
@@ -666,6 +676,20 @@ export default function RouteOverview() {
               <button className="sidebar-nav-item" type="button">
                 <SidebarIcon type="support" />
                 <span>Support</span>
+              </button>
+
+              <div className="sidebar-divider" />
+
+              <button
+                className="sidebar-nav-item"
+                type="button"
+                onClick={() => {
+                  setSidebarOpen(false)
+                  navigate('/test/navigation')
+                }}
+              >
+                <SidebarIcon type="test" />
+                <span>Navigation Test</span>
               </button>
             </nav>
 

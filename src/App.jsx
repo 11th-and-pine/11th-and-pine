@@ -10,6 +10,7 @@ import GuidedWalkLive from './pages/Map/GuidedWalkLive'
 import ExploreRoutes from './pages/Map/ExploreRoutes'
 import PerspectivesList from './pages/Perspectives/PerspectivesList'
 import PerspectiveDetail from './pages/Perspectives/PerspectiveDetail'
+import NavigationTest from './pages/Test/NavigationTest'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/map/explore" element={<ExploreRoutes />} />
         <Route path="/perspectives" element={<PerspectivesList />} />
         <Route path="/perspectives/:id" element={<PerspectiveDetail />} />
+        <Route path="/test/navigation" element={<NavigationTest />} />
       </Routes>
     </div>
   )
