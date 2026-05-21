@@ -5,30 +5,30 @@ import BottomNav from '../../components/BottomNav'
 import perspectiveWestlakeIcon from '../../assets/images/perspective-westlake-icon.png'
 import perspectiveChopIcon from '../../assets/images/perspective-chop-icon.svg'
 import perspectiveLabelIcon from '../../assets/images/perspective-label-icon.png'
-import labelMapImage from '../../assets/images/label-map.jpg'
+import labelMapImage from '../../assets/images/Paramounttheatre.jpg'
 import labelMapImage2 from '../../assets/images/McGraw.jpg'
 import labelMapImage3 from '../../assets/images/westlaketower.jpg'
 
 const LABELS = [
   {
     id: 'poi-westlake-plaza',
-    title: 'Old Building 1',
-    address: 'xxxx Ave',
-    desc: 'A quiet street that once held voices, gatherings, and stories. Walk closer to uncover the layered memories left behind.',
+    title: 'Paramount Theatre',
+    address: '911 Pine St',
+    desc: 'A historic gathering place where entertainment, culture, and public life intersected in downtown Seattle. Explore how this landmark connects to stories of community, performance, and change.',
     imageUrl: labelMapImage,
   },
   {
     id: 'poi-pike-pine',
-    title: 'Old Building 2',
-    address: 'xxxx Ave',
-    desc: 'A nearby site connected to community movement and public memory.',
+    title: 'McGraw Square',
+    address: '531 Stewart St Westlake Ave &, Stewart St',
+    desc: 'A busy public space shaped by movement, gathering, and urban transformation. Discover how this location connects people, transit, and evolving city life.',
     imageUrl: labelMapImage2,
   },
   {
     id: 'poi-cal-anderson',
-    title: 'Old Building 3',
-    address: 'xxxx Ave',
-    desc: 'A place marker for another layer of the walking archive.',
+    title: 'Westlake Tower',
+    address: '1601 5th Ave',
+    desc: 'A landmark of Seattle’s changing skyline that reflects the city’s growth and shifting identity. Experience stories connected to development, memory, and life in downtown Seattle.',
     imageUrl: labelMapImage3,
   },
 ]
