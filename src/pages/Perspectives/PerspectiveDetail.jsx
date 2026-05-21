@@ -224,7 +224,7 @@ const styles = {
     height: '120px',
     borderRadius: '50%',
     objectFit: 'cover',
-    objectPosition: '50% 20%',
+    objectPosition: '55% 20%',
     flexShrink: 0,
   },
   personText: {
