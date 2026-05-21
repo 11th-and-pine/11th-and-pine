@@ -1,37 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import Map, { Marker, Source, Layer } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getPerspectiveById } from '../../services/dataService'
 import NavCircleButton from '../../components/NavCircleButton'
-
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
-
-const mainRoute = [
-  [-122.3371, 47.6131],
-  [-122.3340, 47.6138],
-  [-122.33, 47.6145],
-  [-122.325, 47.6152],
-  [-122.322, 47.6158],
-  [-122.3197, 47.6165],
-]
-
-const routeGeoJSON = {
-  type: 'Feature',
-  geometry: {
-    type: 'LineString',
-    coordinates: mainRoute,
-  },
-}
-
-const routeLayer = {
-  id: 'route-line',
-  type: 'line',
-  paint: {
-    'line-color': '#4b8cff',
-    'line-width': 5,
-  },
-}
+import jordanProfile from '../../assets/images/jordan-profile.jpg'
+import routeInfoMap from '../../assets/images/Routeinfo.png'
 
 function PerspectiveDetail() {
   const navigate = useNavigate()
@@ -53,16 +26,15 @@ function PerspectiveDetail() {
     )
   }
 
-  const mapCenter = perspective.location
-    ? { longitude: perspective.location[1], latitude: perspective.location[0] }
-    : { longitude: -122.328, latitude: 47.6148 }
-
   const playAudio = () => {
     const audio = document.getElementById('perspective-audio-player')
     if (audio && !audioError) {
       audio.play().catch(() => setAudioError(true))
     }
   }
+
+  const avatarImage =
+    perspective.name === 'Westlake' ? jordanProfile : perspective.imageUrl
 
   return (
     <div style={styles.page}>
@@ -89,10 +61,7 @@ function PerspectiveDetail() {
             </h1>
 
             <p style={styles.locationText}>IN Capitol Hill</p>
-
-            <p style={styles.heroDescription}>
-              {perspective.fullBio}
-            </p>
+            <p style={styles.heroDescription}>{perspective.fullBio}</p>
           </div>
         </section>
 
@@ -101,14 +70,16 @@ function PerspectiveDetail() {
 
           <div style={styles.perspectiveRow}>
             <img
-              src={perspective.imageUrl}
+              src={avatarImage}
               alt={perspective.name}
               style={styles.avatar}
             />
 
             <div style={styles.personText}>
               <h3 style={styles.personName}>
-                {perspective.name === 'Westlake' ? 'Jordan XXX' : `${perspective.name} XXX`}
+                {perspective.name === 'Westlake'
+                  ? 'Jordan XXX'
+                  : `${perspective.name} XXX`}
               </h3>
               <p style={styles.personRole}>
                 {perspective.role || 'Community Volunteer'}
@@ -134,31 +105,11 @@ function PerspectiveDetail() {
           <h2 style={styles.routeTitle}>Route Info</h2>
 
           <div style={styles.mapCard}>
-            <Map
-              mapboxAccessToken={MAPBOX_TOKEN}
-              initialViewState={{
-                longitude: mapCenter.longitude,
-                latitude: mapCenter.latitude,
-                zoom: 14,
-              }}
-              style={styles.map}
-              mapStyle="mapbox://styles/mapbox/streets-v12"
-              attributionControl={false}
-            >
-              <Source id="route" type="geojson" data={routeGeoJSON}>
-                <Layer {...routeLayer} />
-              </Source>
-
-              {perspective.location && (
-                <Marker
-                  longitude={perspective.location[1]}
-                  latitude={perspective.location[0]}
-                  anchor="bottom"
-                >
-                  <div style={styles.markerDot} />
-                </Marker>
-              )}
-            </Map>
+            <img
+              src={routeInfoMap}
+              alt="Route info"
+              style={styles.routeImage}
+            />
           </div>
         </section>
       </div>
@@ -246,8 +197,8 @@ const styles = {
   },
   heroDescription: {
     margin: 0,
-    textAlign: 'center',
-    fontSize: '16px',
+    textAlign: 'right',
+    fontSize: '15px',
     lineHeight: 1.2,
     fontWeight: 700,
     color: '#fff',
@@ -273,6 +224,7 @@ const styles = {
     height: '120px',
     borderRadius: '50%',
     objectFit: 'cover',
+    objectPosition: '50% 20%',
     flexShrink: 0,
   },
   personText: {
@@ -281,13 +233,13 @@ const styles = {
   },
   personName: {
     margin: '0 0 18px',
-    fontSize: '24px',
+    fontSize: '22px',
     fontWeight: 800,
     color: '#fff',
   },
   personRole: {
     margin: 0,
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: 600,
     color: '#fff',
   },
@@ -314,21 +266,15 @@ const styles = {
   },
   mapCard: {
     width: '100%',
-    height: '350px',
+    height: '380px',
     overflow: 'hidden',
-    backgroundColor: '#ddd',
+    backgroundColor: '#000',
   },
-  map: {
+  routeImage: {
     width: '100%',
     height: '100%',
-  },
-  markerDot: {
-    width: '18px',
-    height: '18px',
-    borderRadius: '50%',
-    backgroundColor: '#4b8cff',
-    border: '3px solid white',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+    objectFit: 'cover',
+    display: 'block',
   },
   notFoundWrap: {
     padding: '24px',
