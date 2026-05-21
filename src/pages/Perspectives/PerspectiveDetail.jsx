@@ -239,7 +239,7 @@ const styles = {
   },
   personRole: {
     margin: 0,
-    fontSize: '14px',
+    fontSize: '12px',
     fontWeight: 600,
     color: '#fff',
   },
