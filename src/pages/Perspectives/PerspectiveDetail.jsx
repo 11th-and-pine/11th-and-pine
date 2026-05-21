@@ -98,7 +98,7 @@ function PerspectiveDetail() {
 
           <p style={styles.bioText}>
             {perspective.name === 'Westlake'
-              ? 'Alex joined community supply efforts during the CHOP protests and spent much of his time helping organize food distribution and mutual aid stations around Westlake.'
+              ? 'Jordan supported community efforts during the CHOP protests, helping with food distribution and mutual aid in Capitol Hill. His perspective highlights care, cooperation, and community action during the summer of 2020.'
               : perspective.shortBio}
           </p>
 
