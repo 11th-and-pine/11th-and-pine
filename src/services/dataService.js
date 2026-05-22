@@ -20,6 +20,9 @@ export const getPerspectives = () => {
     if (p.id === "2") return { ...p, imageUrl: alexImg }
     if (p.id === "3") return { ...p, imageUrl: jordanImg }
     if (p.id === "4") return { ...p, imageUrl: samImg }
+    // 4th Capitol Hill card — content copied from Sam for now; user will
+    // customize later. Reuse Sam's headshot until a new one is provided.
+    if (p.id === "5") return { ...p, imageUrl: samImg }
     return p
   })
 }

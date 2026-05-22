@@ -101,17 +101,6 @@ const CHOP_ROUTES = [
     [47.6183586260147, -122.31872194784339],
     [47.61810752901002, -122.31941028200404]
   ]},
-  {
-    color: '#06b6d4',
-    path: [
-    [47.61534637433494, -122.31998484534672],
-    [47.61539797647727, -122.3197373210817],
-    [47.616384131027495, -122.31970265459985],
-    [47.61642619407816, -122.31846159454928],
-    [47.61758057794659, -122.31837839488288],
-    [47.61865081390424, -122.31837146158365],
-    [47.61871624246526, -122.31962638822698]
-  ]},
 ]
 
 const POIS = [
@@ -142,6 +131,13 @@ const CAPITOL_POIS = [
     name: 'Seattle Police Department - East Precinct',
     title: 'Seattle Police Department - East Precinct',
     desc: 'A key civic landmark at the edge of the CHOP area.',
+  },
+  {
+    id: 'cal-anderson-park',
+    position: [47.615353, -122.319993],
+    name: 'Cal Anderson Park',
+    title: 'Cal Anderson Park',
+    desc: 'A central public park in Capitol Hill and a gathering point that became the heart of CHOP during the summer of 2020.',
   },
 ]
 

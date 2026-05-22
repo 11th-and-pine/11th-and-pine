@@ -22,6 +22,59 @@ const FALLBACK_ROUTE_PATH = [
   [47.61534637433494, -122.31998484534672],
 ]
 
+// Capitol Hill branch routes — must stay in sync with CHOP_ROUTES in
+// src/pages/Map/RouteOverview.jsx. Keyed by perspective id so each
+// perspective's "Route Info" preview shows its own colored route.
+const CHOP_PREVIEW_ROUTES = {
+  // Alex — yellow
+  '2': {
+    color: '#EED05D',
+    path: [
+      [47.61534637433494, -122.31998484534672],
+      [47.61537792391303, -122.31834587334546],
+      [47.615189438501694, -122.318284960829],
+      [47.61518751104897, -122.31702045803209],
+      [47.61507232602374, -122.31699950222341],
+      [47.615104, -122.316990],
+      [47.61507932004624, -122.31704771348437],
+      [47.616317, -122.317007],
+    ],
+  },
+  // Jordan — purple (sim demo route)
+  '3': {
+    color: '#8b5cf6',
+    path: [
+      [47.61534637433494, -122.31998484534672],
+      [47.616353487308146, -122.31971489484106],
+      [47.61803690317238, -122.31941907806251],
+      [47.618674847206655, -122.320057007748],
+    ],
+  },
+  // Sam — green
+  '4': {
+    color: '#22c55e',
+    path: [
+      [47.61534637433494, -122.31998484534672],
+      [47.61537792391303, -122.31834587334546],
+      [47.615328, -122.318167],
+      [47.61644970344747, -122.31829245310354],
+      [47.618667480923264, -122.3183265120806],
+      [47.61871203860535, -122.31707799892192],
+    ],
+  },
+  // 4th library entry — pink
+  '5': {
+    color: '#ec4899',
+    path: [
+      [47.61534637433494, -122.31998484534672],
+      [47.618724352103335, -122.32003383177313],
+      [47.6186916006176, -122.31948316444459],
+      [47.6183586260147, -122.31872194784339],
+      [47.61810752901002, -122.31941028200404],
+    ],
+  },
+}
+
 const toLngLat = ([lat, lng]) => [lng, lat]
 
 function makeLine(points) {
@@ -48,17 +101,22 @@ function getBounds(points) {
   ]
 }
 
-function RouteMiniSimulation({ route }) {
+function RouteMiniSimulation({ route, chopRoute }) {
   const mapRef = useRef(null)
   const timerRef = useRef(null)
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
 
-  const path = route?.id === 'main'
+  // Capitol Hill perspectives get their own colored branch route; everyone
+  // else falls back to the main Westlake → Cal Anderson route.
+  const path = chopRoute?.path?.length > 1
+    ? chopRoute.path
+    : route?.id === 'main'
     ? FALLBACK_ROUTE_PATH
     : route?.stops?.length > 1
     ? route.stops.map(stop => stop.position)
     : FALLBACK_ROUTE_PATH
+  const fullRouteColor = chopRoute?.color || '#EED05D'
   const previewPoint = path[Math.min(step, path.length - 1)]
   const traveledPath = path.slice(0, Math.max(step + 1, 1))
   const complete = step >= path.length - 1
@@ -132,7 +190,11 @@ function RouteMiniSimulation({ route }) {
             id="preview-full-route-layer"
             type="line"
             layout={styles.previewLineLayout}
-            paint={styles.previewFullRoutePaint}
+            paint={{
+              'line-color': fullRouteColor,
+              'line-width': 5,
+              'line-opacity': 0.35,
+            }}
           />
         </Source>
 
@@ -198,6 +260,9 @@ function PerspectiveDetail() {
   const perspective = getPerspectiveById(Number(id))
   const [audioError, setAudioError] = useState(false)
   const route = perspective ? getRouteById(perspective.routeId || 'main') : null
+  // Capitol Hill perspectives use the matching colored branch route for the
+  // Route Info preview; Westlake (id "1") falls back to the main route.
+  const chopRoute = perspective ? CHOP_PREVIEW_ROUTES[perspective.id] : null
 
   if (!perspective) {
     return (
@@ -292,7 +357,7 @@ function PerspectiveDetail() {
           <h2 style={styles.routeTitle}>Route Info</h2>
 
           <div style={styles.mapCard}>
-            <RouteMiniSimulation route={route} />
+            <RouteMiniSimulation route={route} chopRoute={chopRoute} />
           </div>
         </section>
       </div>

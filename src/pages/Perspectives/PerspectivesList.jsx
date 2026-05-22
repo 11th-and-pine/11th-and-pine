@@ -34,6 +34,24 @@ const LABELS = [
     desc: 'A landmark of Seattle’s changing skyline that reflects the city’s growth and shifting identity. Experience stories connected to development, memory, and life in downtown Seattle.',
     imageUrl: labelMapImage3,
   },
+  {
+    id: 'poi-cal-anderson-park',
+    title: 'Cal Anderson Park',
+    address: '1635 11th Ave',
+    position: [47.615353, -122.319993],
+    desc: 'A central public park in Capitol Hill and a gathering point that became the heart of CHOP during the summer of 2020. Named for Washington’s first openly gay state legislator, it remains a site of community memory and mobilization.',
+    // TODO: swap in a real Cal Anderson photo when available
+    imageUrl: labelMapImage3,
+  },
+  {
+    id: 'poi-east-precinct',
+    title: 'Seattle Police Department — East Precinct',
+    address: '1519 12th Ave',
+    position: [47.61507932004624, -122.31704771348437],
+    desc: 'A key civic landmark at the edge of the CHOP area. The precinct’s temporary evacuation in June 2020 helped catalyze the autonomous zone that formed in the surrounding blocks.',
+    // TODO: swap in a real East Precinct photo when available
+    imageUrl: labelMapImage3,
+  },
 ]
 
 function ChevronIcon({ expanded }) {

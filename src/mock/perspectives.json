@@ -62,6 +62,19 @@
       "imageUrl": "src/assets/images/sam.webp",
 
       "location": [47.614, -122.329]
+    },
+    {
+      "id": "5",
+      "name": "Sam",
+      "role": "Street Medic",
+      "shortBio": "Providing care and safety during moments of unrest.",
+      "fullBio": "Sam trained as an EMT and volunteered their skills during CHOP, helping set up and run the community medical station near Cal Anderson Park.",
+
+      "routeId": "main",
+      "audioUrl": "/audio/perspective-3.mp3",
+      "imageUrl": "src/assets/images/sam.webp",
+
+      "location": [47.614, -122.329]
     }
   ]
 }
