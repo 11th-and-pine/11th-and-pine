@@ -83,13 +83,13 @@ button, input, select, textarea, optgroup {
 
 .onboarding-hero {
   position: relative;
-  flex: 0 0 52%;
+  flex: 0 0 50%;
   min-height: 0;
 }
 
 .onboarding-hero > div {
-  height: calc(100% + 24px);
-  transform: translateY(-24px);
+  height: calc(100% + 32px);
+  transform: translateY(-32px);
 }
 
 .onboarding-content {
@@ -101,7 +101,7 @@ button, input, select, textarea, optgroup {
   justify-content: space-between;
   gap: clamp(12px, 2.2vh, 22px);
   padding:
-    clamp(14px, 3vh, 28px)
+    clamp(8px, 2vh, 18px)
     clamp(24px, 7vw, 36px)
     calc(clamp(10px, 1.8vh, 16px) + var(--safe-bottom, 0px));
   color: #111827;
@@ -181,7 +181,7 @@ button, input, select, textarea, optgroup {
 
 .onboarding-indicator {
   position: absolute;
-  top: clamp(172px, 21vh, 218px);
+  top: clamp(184px, 22vh, 230px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -219,12 +219,12 @@ button, input, select, textarea, optgroup {
 
 @media (max-height: 700px) {
   .onboarding-hero {
-    flex-basis: 45%;
+    flex-basis: 43%;
   }
 
   .onboarding-hero > div {
-    height: calc(100% + 18px);
-    transform: translateY(-18px);
+    height: calc(100% + 26px);
+    transform: translateY(-26px);
   }
 
   .onboarding-content {
@@ -242,18 +242,18 @@ button, input, select, textarea, optgroup {
   }
 
   .onboarding-indicator {
-    top: clamp(150px, 21vh, 178px);
+    top: clamp(160px, 22vh, 190px);
   }
 }
 
 @media (max-height: 610px) {
   .onboarding-hero {
-    flex-basis: 40%;
+    flex-basis: 38%;
   }
 
   .onboarding-hero > div {
-    height: calc(100% + 14px);
-    transform: translateY(-14px);
+    height: calc(100% + 22px);
+    transform: translateY(-22px);
   }
 
   .onboarding-title {
@@ -269,7 +269,7 @@ button, input, select, textarea, optgroup {
   }
 
   .onboarding-indicator {
-    top: clamp(130px, 20vh, 150px);
+    top: clamp(138px, 21vh, 160px);
   }
 }
 
