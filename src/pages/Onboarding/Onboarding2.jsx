@@ -79,10 +79,10 @@ function Onboarding2() {
             the neighborhood into a space of gathering and expression.
           </p>
 
-          <div className="flex justify-center gap-2">
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
-            <div className="w-12 h-1.5 rounded-full active-onboarding-dot" />
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
+          <div className="onboarding-indicator onboarding-indicator-center" aria-hidden="true">
+            <div className="onboarding-dot" />
+            <div className="onboarding-dot onboarding-dot-active" />
+            <div className="onboarding-dot" />
           </div>
         </div>
 

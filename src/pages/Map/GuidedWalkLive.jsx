@@ -11,6 +11,8 @@ const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 const PRIMARY_BUTTON_COLOR = '#C53E2C'
 const DEFAULT_ROUTE_COLOR = PRIMARY_BUTTON_COLOR
 const WRONG_ROUTE_COLOR = '#ef4444'
+const ROUTE_START_MARKER_COLOR = '#22c55e'
+const ROUTE_END_MARKER_COLOR = '#ef4444'
 
 // GPS thresholds (feet). Tune after first field test.
 //   POI_TRIGGER_FT — within this many feet of a POI, its audio starts.
@@ -277,7 +279,7 @@ export default function GuidedWalkLive() {
     ? distanceToRoute(userLocation, plannedRoute) > OFF_ROUTE_FT
     : false
 
-  // Audio player state — identical to GuidedWalk.jsx
+  // Audio player state for route-triggered narration.
   const [audioPlaying, setAudioPlaying] = useState(false)
   const [audioProgress, setAudioProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
@@ -626,7 +628,7 @@ export default function GuidedWalkLive() {
     })
   }, [userLocation, userHeading, gpsTrail, isSimRoute])
 
-  // Reset state when route changes (same pattern as GuidedWalk.jsx)
+  // Reset state when route changes.
   const [prevRoute, setPrevRoute] = useState(route)
   if (prevRoute !== route) {
     setPrevRoute(route)
@@ -715,7 +717,7 @@ export default function GuidedWalkLive() {
           latitude={toLngLat(plannedRoute[0])[1]}
           anchor="center"
         >
-          <div style={styles.routeMarker(routeColor)} />
+          <div style={styles.routeStartMarker} />
         </Marker>
 
         {/* End marker */}
@@ -724,7 +726,7 @@ export default function GuidedWalkLive() {
           latitude={toLngLat(plannedRoute[plannedRoute.length - 1])[1]}
           anchor="center"
         >
-          <div style={styles.routeMarker(routeColor)} />
+          <div style={styles.routeEndMarker} />
         </Marker>
 
         {/* POI markers */}
@@ -1279,13 +1281,23 @@ const styles = {
     'line-opacity': 0.9,
   }),
 
-  routeMarker: color => ({
-    width: 10,
-    height: 10,
-    background: color,
-    border: '2.5px solid white',
+  routeStartMarker: {
+    width: 14,
+    height: 14,
+    background: ROUTE_START_MARKER_COLOR,
+    border: '3px solid white',
     borderRadius: '50%',
-  }),
+    boxShadow: '0 2px 8px rgba(34, 197, 94, 0.6)',
+  },
+
+  routeEndMarker: {
+    width: 14,
+    height: 14,
+    background: ROUTE_END_MARKER_COLOR,
+    border: '3px solid white',
+    borderRadius: '50%',
+    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)',
+  },
 
   poiMarker: {
     cursor: 'pointer',

@@ -74,10 +74,10 @@ function Onboarding1() {
             A location-based audio experience exploring the stories of CHOP in Capitol Hill.
           </p>
 
-          <div className="flex justify-start gap-2">
-            <div className="w-12 h-1.5 rounded-full active-onboarding-dot" />
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
+          <div className="onboarding-indicator onboarding-indicator-left" aria-hidden="true">
+            <div className="onboarding-dot onboarding-dot-active" />
+            <div className="onboarding-dot" />
+            <div className="onboarding-dot" />
           </div>
         </div>
 

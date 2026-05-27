@@ -397,14 +397,12 @@ export default function NavigateToStart() {
 
         {atStart && (
           <div style={styles.messageBlock}>
-            <div style={styles.successIcon}>✅</div>
-
             <div style={styles.successTitle}>
               You're at the starting point!
             </div>
 
             <div style={styles.successSubtitle}>
-              {route ? `${route.title || 'Selected route'} — ready to begin` : 'Westlake Center — ready to begin'}
+              {route ? `${route.title || 'Selected route'} — ready to begin` : 'Westlake Tower — ready to begin'}
             </div>
           </div>
         )}
@@ -601,11 +599,6 @@ const styles = {
     color: '#ef4444',
     fontWeight: 600,
     fontSize: 14,
-  },
-
-  successIcon: {
-    fontSize: 36,
-    marginBottom: 8,
   },
 
   successTitle: {

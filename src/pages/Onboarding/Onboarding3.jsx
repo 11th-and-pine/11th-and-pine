@@ -77,10 +77,10 @@ function Onboarding3() {
             Follow the route. Stories play as you move. Wear headphones and stay aware of your surroundings.
           </p>
 
-          <div className="flex justify-center gap-2">
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
-            <div className="w-6 h-1.5 rounded-full bg-gray-300" />
-            <div className="w-12 h-1.5 rounded-full active-onboarding-dot" />
+          <div className="onboarding-indicator onboarding-indicator-right" aria-hidden="true">
+            <div className="onboarding-dot" />
+            <div className="onboarding-dot" />
+            <div className="onboarding-dot onboarding-dot-active" />
           </div>
         </div>
 

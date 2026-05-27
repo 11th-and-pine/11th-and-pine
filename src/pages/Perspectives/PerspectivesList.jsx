@@ -6,7 +6,6 @@ import perspectiveWestlakeIcon from '../../assets/images/perspective-westlake-ic
 import perspectiveChopIcon from '../../assets/images/perspective-chop-icon.svg'
 import perspectiveLabelIcon from '../../assets/images/perspective-label-icon.png'
 import labelMapImage from '../../assets/images/Paramounttheatre.jpg'
-import labelMapImage2 from '../../assets/images/McGraw.jpg'
 import labelMapImage3 from '../../assets/images/westlaketower.jpg'
 
 const LABELS = [
@@ -17,14 +16,6 @@ const LABELS = [
     position: [47.613380, -122.331806],
     desc: 'A historic gathering place where entertainment, culture, and public life intersected in downtown Seattle. Explore how this landmark connects to stories of community, performance, and change.',
     imageUrl: labelMapImage,
-  },
-  {
-    id: 'poi-mcgraw-square',
-    title: 'McGraw Square',
-    address: '531 Stewart St Westlake Ave &, Stewart St',
-    position: [47.613032726771145, -122.33754194183771],
-    desc: 'A busy public space shaped by movement, gathering, and urban transformation. Discover how this location connects people, transit, and evolving city life.',
-    imageUrl: labelMapImage2,
   },
   {
     id: 'poi-westlake-tower',
@@ -40,7 +31,6 @@ const LABELS = [
     address: '1635 11th Ave',
     position: [47.615353, -122.319993],
     desc: 'A central public park in Capitol Hill and a gathering point that became the heart of CHOP during the summer of 2020. Named for Washington’s first openly gay state legislator, it remains a site of community memory and mobilization.',
-    // TODO: swap in a real Cal Anderson photo when available
     imageUrl: labelMapImage3,
   },
   {
@@ -49,7 +39,6 @@ const LABELS = [
     address: '1519 12th Ave',
     position: [47.61507932004624, -122.31704771348437],
     desc: 'A key civic landmark at the edge of the CHOP area. The precinct’s temporary evacuation in June 2020 helped catalyze the autonomous zone that formed in the surrounding blocks.',
-    // TODO: swap in a real East Precinct photo when available
     imageUrl: labelMapImage3,
   },
 ]

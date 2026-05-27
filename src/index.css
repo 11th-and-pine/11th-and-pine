@@ -88,6 +88,7 @@ button, input, select, textarea, optgroup {
 }
 
 .onboarding-content {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -118,6 +119,7 @@ button, input, select, textarea, optgroup {
   min-height: 0;
   flex-direction: column;
   gap: clamp(14px, 3.1vh, 32px);
+  padding-bottom: 42px;
 }
 
 .onboarding-title {
@@ -172,6 +174,39 @@ button, input, select, textarea, optgroup {
   background-color: #EED05D;
 }
 
+.onboarding-indicator {
+  position: absolute;
+  top: clamp(238px, 25.2vh, 292px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onboarding-indicator-left {
+  left: clamp(24px, 7vw, 36px);
+}
+
+.onboarding-indicator-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.onboarding-indicator-right {
+  right: clamp(24px, 7vw, 36px);
+}
+
+.onboarding-dot {
+  width: 24px;
+  height: 6px;
+  border-radius: 999px;
+  background: #d1d5db;
+}
+
+.onboarding-dot-active {
+  width: 48px;
+  background: #EED05D;
+}
+
 .walk-alert-action {
   font-family: "Plus Jakarta Sans", sans-serif !important;
 }
@@ -188,10 +223,15 @@ button, input, select, textarea, optgroup {
 
   .onboarding-copy {
     gap: clamp(10px, 2.2vh, 18px);
+    padding-bottom: 34px;
   }
 
   .onboarding-body {
     line-height: 1.48;
+  }
+
+  .onboarding-indicator {
+    top: clamp(194px, 24vh, 220px);
   }
 }
 
@@ -206,6 +246,14 @@ button, input, select, textarea, optgroup {
 
   .onboarding-button {
     min-height: 38px;
+  }
+
+  .onboarding-copy {
+    padding-bottom: 28px;
+  }
+
+  .onboarding-indicator {
+    top: clamp(166px, 23.5vh, 190px);
   }
 }
 

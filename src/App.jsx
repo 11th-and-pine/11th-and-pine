@@ -5,12 +5,10 @@ import Onboarding2 from './pages/Onboarding/Onboarding2'
 import Onboarding3 from './pages/Onboarding/Onboarding3'
 import RouteOverview from './pages/Map/RouteOverview'
 import NavigateToStart from './pages/Map/NavigateToStart'
-import GuidedWalk from './pages/Map/GuidedWalk'
 import GuidedWalkLive from './pages/Map/GuidedWalkLive'
 import ExploreRoutes from './pages/Map/ExploreRoutes'
 import PerspectivesList from './pages/Perspectives/PerspectivesList'
 import PerspectiveDetail from './pages/Perspectives/PerspectiveDetail'
-import NavigationTest from './pages/Test/NavigationTest'
 
 function App() {
   return (
@@ -24,13 +22,10 @@ function App() {
         <Route path="/map/overview" element={<RouteOverview />} />
         <Route path="/map/navigate" element={<NavigateToStart />} />
         <Route path="/map/walking" element={<GuidedWalkLive />} />
-        {/* Always-on routes for testing both versions side-by-side */}
-        <Route path="/map/walking/sim" element={<GuidedWalk />} />
         <Route path="/map/walking/live" element={<GuidedWalkLive />} />
         <Route path="/map/explore" element={<ExploreRoutes />} />
         <Route path="/perspectives" element={<PerspectivesList />} />
         <Route path="/perspectives/:id" element={<PerspectiveDetail />} />
-        <Route path="/test/navigation" element={<NavigationTest />} />
       </Routes>
     </div>
   )
