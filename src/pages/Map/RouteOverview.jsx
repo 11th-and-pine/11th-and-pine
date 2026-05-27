@@ -11,38 +11,9 @@ import paramountImage from '../../assets/images/Paramounttheatre.jpg'
 import westlakeTowerImage from '../../assets/images/westlaketower.jpg'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
-const INITIAL_VIEW_STATE = {longitude: -122.328, latitude: 47.6148, zoom: 15}
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 const PRIMARY_ROUTE_COLOR = '#C53E2C'
 const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
-const ROUTE_LINE_LAYOUT = {
-  'line-cap': 'round',
-  'line-join': 'round',
-}
-const MAIN_ROUTE_PAINT = {
-  'line-color': PRIMARY_ROUTE_COLOR,
-  'line-width': 5,
-  'line-opacity': 0.9,
-}
-
-const getExploreRoutePaint = color => ({
-  'line-color': color,
-  'line-width': 3,
-  'line-opacity': 0.6,
-  'line-dasharray': [2, 1.5],
-})
-
-const getSelectedRoutePaint = color => ({
-  'line-color': color,
-  'line-width': 5,
-  'line-opacity': 1,
-})
-
-const HIT_TARGET_PAINT = {
-  'line-color': '#000',
-  'line-width': 22,
-  'line-opacity': 0,
-}
 
 const WESTLAKE_ROUTE = [
   [47.61246495850918, -122.33745074674492],
@@ -454,7 +425,7 @@ export default function RouteOverview() {
         <Map
           ref={mapRef}
           mapboxAccessToken={MAPBOX_TOKEN}
-          initialViewState={INITIAL_VIEW_STATE}
+          initialViewState={styles.initialViewState}
           mapStyle={MAP_STYLE}
           onLoad={handleMapLoad}
           attributionControl={false}
@@ -475,15 +446,15 @@ export default function RouteOverview() {
                 <Layer
                   id={`explore-layer-${index}`}
                   type="line"
-                  layout={ROUTE_LINE_LAYOUT}
-                  paint={isSelected ? getSelectedRoutePaint(route.color) : getExploreRoutePaint(route.color)}
+                  layout={styles.routeLineLayout}
+                  paint={isSelected ? styles.getSelectedRoutePaint(route.color) : styles.getExploreRoutePaint(route.color)}
                 />
                 {/* Wider invisible hit target for easier clicking */}
                 <Layer
                   id={`explore-hit-${index}`}
                   type="line"
-                  layout={ROUTE_LINE_LAYOUT}
-                  paint={HIT_TARGET_PAINT}
+                  layout={styles.routeLineLayout}
+                  paint={styles.hitTargetPaint}
                 />
               </Source>
             )
@@ -497,8 +468,8 @@ export default function RouteOverview() {
             <Layer
               id="main-route-layer"
               type="line"
-              layout={ROUTE_LINE_LAYOUT}
-              paint={MAIN_ROUTE_PAINT}
+              layout={styles.routeLineLayout}
+              paint={styles.mainRoutePaint}
             />
           </Source>
 
@@ -835,4 +806,42 @@ export default function RouteOverview() {
 
     </div>
   )
+}
+
+const styles = {
+  initialViewState: {
+    longitude: -122.328,
+    latitude: 47.6148,
+    zoom: 15,
+  },
+
+  routeLineLayout: {
+    'line-cap': 'round',
+    'line-join': 'round',
+  },
+
+  mainRoutePaint: {
+    'line-color': PRIMARY_ROUTE_COLOR,
+    'line-width': 5,
+    'line-opacity': 0.9,
+  },
+
+  getExploreRoutePaint: color => ({
+    'line-color': color,
+    'line-width': 3,
+    'line-opacity': 0.6,
+    'line-dasharray': [2, 1.5],
+  }),
+
+  getSelectedRoutePaint: color => ({
+    'line-color': color,
+    'line-width': 5,
+    'line-opacity': 1,
+  }),
+
+  hitTargetPaint: {
+    'line-color': '#000',
+    'line-width': 22,
+    'line-opacity': 0,
+  },
 }
