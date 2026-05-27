@@ -176,10 +176,11 @@ button, input, select, textarea, optgroup {
 
 .onboarding-indicator {
   position: absolute;
-  top: clamp(238px, 25.2vh, 292px);
+  top: clamp(172px, 21vh, 218px);
   display: flex;
   align-items: center;
   gap: 8px;
+  pointer-events: none;
 }
 
 .onboarding-indicator-left {
@@ -231,7 +232,7 @@ button, input, select, textarea, optgroup {
   }
 
   .onboarding-indicator {
-    top: clamp(194px, 24vh, 220px);
+    top: clamp(150px, 21vh, 178px);
   }
 }
 
@@ -253,7 +254,7 @@ button, input, select, textarea, optgroup {
   }
 
   .onboarding-indicator {
-    top: clamp(166px, 23.5vh, 190px);
+    top: clamp(130px, 20vh, 150px);
   }
 }
 
