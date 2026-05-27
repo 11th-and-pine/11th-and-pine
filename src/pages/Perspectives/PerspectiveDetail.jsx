@@ -207,17 +207,6 @@ function RouteMiniSimulation({ route, chopRoute }) {
           />
         </Source>
 
-        {route?.stops?.map(stop => (
-          <Marker
-            key={stop.id}
-            longitude={stop.position[1]}
-            latitude={stop.position[0]}
-            anchor="center"
-          >
-            <div style={styles.previewStopMarker} />
-          </Marker>
-        ))}
-
         <Marker
           longitude={path[0][1]}
           latitude={path[0][0]}
@@ -258,7 +247,6 @@ function PerspectiveDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
   const perspective = getPerspectiveById(Number(id))
-  const [audioError, setAudioError] = useState(false)
   const route = perspective ? getRouteById(perspective.routeId || 'main') : null
   // Capitol Hill perspectives use the matching colored branch route for the
   // Route Info preview; Westlake (id "1") falls back to the main route.
@@ -276,13 +264,6 @@ function PerspectiveDetail() {
         </div>
       </div>
     )
-  }
-
-  const playAudio = () => {
-    const audio = document.getElementById('perspective-audio-player')
-    if (audio && !audioError) {
-      audio.play().catch(() => setAudioError(true))
-    }
   }
 
   const avatarImage =
@@ -338,14 +319,6 @@ function PerspectiveDetail() {
               </p>
             </div>
 
-            <button
-              style={styles.playButton}
-              disabled={audioError || !perspective.audioUrl}
-              onClick={playAudio}
-              aria-label="Play audio"
-            >
-              ▶
-            </button>
           </div>
 
           <p style={styles.bioText}>
@@ -362,16 +335,6 @@ function PerspectiveDetail() {
         </section>
       </div>
 
-      {perspective.audioUrl && (
-        <audio
-          id="perspective-audio-player"
-          src={perspective.audioUrl}
-          preload="metadata"
-          onLoadedMetadata={() => setAudioError(false)}
-          onError={() => setAudioError(true)}
-          style={{ display: 'none' }}
-        />
-      )}
     </div>
   )
 }
@@ -491,15 +454,6 @@ const styles = {
     fontWeight: 600,
     color: '#fff',
   },
-  playButton: {
-    border: 'none',
-    background: 'transparent',
-    color: '#fff',
-    fontSize: '46px',
-    cursor: 'pointer',
-    lineHeight: 1,
-    padding: 0,
-  },
   bioText: {
     margin: '0 0 58px',
     fontSize: '16px',
@@ -542,14 +496,6 @@ const styles = {
     'line-color': '#C53E2C',
     'line-width': 5,
     'line-opacity': 0.95,
-  },
-  previewStopMarker: {
-    width: 10,
-    height: 10,
-    borderRadius: '50%',
-    background: '#EED05D',
-    border: '2px solid #fff',
-    boxShadow: '0 2px 10px rgba(238, 208, 93, 0.55)',
   },
   previewStartMarker: {
     width: 14,
