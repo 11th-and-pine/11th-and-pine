@@ -12,7 +12,7 @@ import westlakeTowerImage from '../../assets/images/label-westlake-tower.jpg'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
-const PRIMARY_ROUTE_COLOR = '#C53E2C'
+const PRIMARY_ROUTE_COLOR = '#D9603F'
 const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 
 const WESTLAKE_ROUTE = [
@@ -76,7 +76,7 @@ const CHOP_ROUTES = [
     title: "Tiana's Route",
     role: 'Mutual Aid Volunteer',
     desc: 'Follow the care work behind CHOP: supply runs, food tables, and everyday support.',
-    color: '#ec4899',
+    color: '#06b6d4',
     path: [
     [47.61534637433494, -122.31998484534672],
     [47.61537792391303, -122.31834587334546],
@@ -519,7 +519,10 @@ export default function RouteOverview() {
             latitude={WESTLAKE_ROUTE[0][0]}
             anchor="center"
           >
-            <div className="route-start-marker" />
+            <div
+              className="route-start-marker"
+              style={{ '--marker-color': PRIMARY_ROUTE_COLOR }}
+            />
           </Marker>
 
           {/* End marker */}
@@ -528,7 +531,10 @@ export default function RouteOverview() {
             latitude={WESTLAKE_ROUTE[WESTLAKE_ROUTE.length - 1][0]}
             anchor="center"
           >
-            <div className="route-end-marker" />
+            <div
+              className="route-end-marker"
+              style={{ '--marker-color': PRIMARY_ROUTE_COLOR }}
+            />
           </Marker>
         </Map>
       </div>

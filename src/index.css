@@ -452,18 +452,10 @@ button, input, select, textarea, optgroup {
 .route-end-marker {
   width: 14px;
   height: 14px;
+  background: var(--marker-color);
   border: 3px solid white;
   border-radius: 50%;
-}
-
-.route-start-marker {
-  background: #22c55e;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.6);
-}
-
-.route-end-marker {
-  background: #ef4444;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--marker-color) 60%, transparent);
 }
 
 .poi-overlay {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Map, { Layer, Marker, Source } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -9,6 +9,7 @@ import jordanProfile from '../../assets/images/perspective-westlake-jordan-avata
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 const PREVIEW_INTERVAL_MS = 700
+const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 
 const FALLBACK_ROUTE_PATH = [
   [47.61246495850918, -122.33745074674492],
@@ -61,7 +62,7 @@ const CHOP_PREVIEW_ROUTES = {
   },
   // 4th library entry — pink
   '5': {
-    color: '#ec4899',
+    color: '#06b6d4',
     path: [
       [47.61534637433494, -122.31998484534672],
       [47.61537792391303, -122.31834587334546],
@@ -76,6 +77,7 @@ const CHOP_PREVIEW_ROUTES = {
 }
 
 const toLngLat = ([lat, lng]) => [lng, lat]
+const toLatLng = ([lng, lat]) => [lat, lng]
 
 function makeLine(points) {
   const coordinates = points.length > 1
@@ -106,20 +108,97 @@ function RouteMiniSimulation({ route, chopRoute }) {
   const timerRef = useRef(null)
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
+  const [directionsResult, setDirectionsResult] = useState({
+    routeKey: null,
+    path: null,
+  })
 
   // Capitol Hill perspectives get their own colored branch route; everyone
   // else falls back to the main Westlake → Cal Anderson route.
-  const path = chopRoute?.path?.length > 1
-    ? chopRoute.path
-    : route?.id === 'main'
-    ? FALLBACK_ROUTE_PATH
-    : route?.stops?.length > 1
-    ? route.stops.map(stop => stop.position)
-    : FALLBACK_ROUTE_PATH
+  const waypointPath = useMemo(() => (
+    chopRoute?.path?.length > 1
+      ? chopRoute.path
+      : route?.id === 'main'
+      ? FALLBACK_ROUTE_PATH
+      : route?.stops?.length > 1
+      ? route.stops.map(stop => stop.position)
+      : FALLBACK_ROUTE_PATH
+  ), [chopRoute, route])
+  const routeKey = useMemo(
+    () => waypointPath.map(point => point.join(',')).join(';'),
+    [waypointPath],
+  )
+  const path =
+    directionsResult.routeKey === routeKey && directionsResult.path?.length > 1
+      ? directionsResult.path
+      : waypointPath
   const fullRouteColor = chopRoute?.color || '#EED05D'
   const previewPoint = path[Math.min(step, path.length - 1)]
   const traveledPath = path.slice(0, Math.max(step + 1, 1))
   const complete = step >= path.length - 1
+
+  useEffect(() => {
+    if (!MAPBOX_TOKEN || waypointPath.length < 2) {
+      return
+    }
+
+    const controller = new AbortController()
+    const coordinates = waypointPath.map(point => toLngLat(point).join(',')).join(';')
+    const params = new URLSearchParams({
+      access_token: MAPBOX_TOKEN,
+      geometries: 'geojson',
+      overview: 'full',
+      steps: 'false',
+    })
+
+    Promise.resolve()
+      .then(() => fetch(
+        `https://api.mapbox.com/directions/v5/${WALKING_DIRECTIONS_PROFILE}/${coordinates}?${params.toString()}`,
+        { signal: controller.signal },
+      ))
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Preview route request failed')
+        }
+
+        return response.json()
+      })
+      .then(data => {
+        const coordinatesLngLat = data.routes?.[0]?.geometry?.coordinates
+
+        if (!coordinatesLngLat?.length) {
+          throw new Error('Preview route missing geometry')
+        }
+
+        setDirectionsResult({
+          routeKey,
+          path: coordinatesLngLat.map(toLatLng),
+        })
+      })
+      .catch(error => {
+        if (error.name !== 'AbortError') {
+          setDirectionsResult({
+            routeKey,
+            path: null,
+          })
+        }
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [routeKey, waypointPath])
+
+  useEffect(() => {
+    if (!mapRef.current || path.length < 2) {
+      return
+    }
+
+    mapRef.current.fitBounds(getBounds(path), {
+      padding: 42,
+      duration: 0,
+    })
+  }, [path])
 
   useEffect(() => {
     return () => {
@@ -330,7 +409,11 @@ function PerspectiveDetail() {
           <h2 style={styles.routeTitle}>Route Info</h2>
 
           <div style={styles.mapCard}>
-            <RouteMiniSimulation route={route} chopRoute={chopRoute} />
+            <RouteMiniSimulation
+              key={perspective.id}
+              route={route}
+              chopRoute={chopRoute}
+            />
           </div>
         </section>
       </div>

@@ -9,10 +9,8 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
 
 const PRIMARY_BUTTON_COLOR = '#C53E2C'
-const DEFAULT_ROUTE_COLOR = PRIMARY_BUTTON_COLOR
+const DEFAULT_ROUTE_COLOR = '#D9603F'
 const WRONG_ROUTE_COLOR = '#ef4444'
-const ROUTE_START_MARKER_COLOR = '#22c55e'
-const ROUTE_END_MARKER_COLOR = '#ef4444'
 
 // GPS thresholds (feet). Tune after first field test.
 //   POI_TRIGGER_FT — within this many feet of a POI, its audio starts.
@@ -29,7 +27,7 @@ const FOLLOW_ZOOM = 17.5
 const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 
 // Demo walking simulation — only active for the purple branch route.
-// We skip GPS, POI audio triggers, and off-route alerts in this mode; the
+// We skip GPS and POI audio triggers in this mode; the
 // walker is just interpolated along the planned route at a realistic pace
 // so the screen can be shown during a demo without needing real movement.
 const SIM_ROUTE_COLOR = '#8b5cf6'
@@ -435,8 +433,8 @@ export default function GuidedWalkLive() {
   // ──────────────────────────────────────────────────────────
   // Demo walking simulation (purple route only).
   // Interpolates `userLocation` along `plannedRoute` at a real-life
-  // walking pace. Skips POI audio and off-route alerts — purely visual
-  // movement for demo recording / presentation.
+  // walking pace. The off-route alert can still be triggered manually
+  // with the demo button for presentation / field-test setup.
   // ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isSimRoute) return
@@ -666,6 +664,13 @@ export default function GuidedWalkLive() {
     setAlertDismissed(true)
   }
 
+  function triggerSimOffRouteAlert() {
+    setAlertDismissed(false)
+    setOffRouteAlert(true)
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300])
+    playErrorSound()
+  }
+
   function closePOI() {
     setOpenPOI(null)
   }
@@ -717,7 +722,7 @@ export default function GuidedWalkLive() {
           latitude={toLngLat(plannedRoute[0])[1]}
           anchor="center"
         >
-          <div style={styles.routeStartMarker} />
+          <div style={styles.routeEndpointMarker(routeColor)} />
         </Marker>
 
         {/* End marker */}
@@ -726,7 +731,7 @@ export default function GuidedWalkLive() {
           latitude={toLngLat(plannedRoute[plannedRoute.length - 1])[1]}
           anchor="center"
         >
-          <div style={styles.routeEndMarker} />
+          <div style={styles.routeEndpointMarker(routeColor)} />
         </Marker>
 
         {/* POI markers */}
@@ -797,6 +802,16 @@ export default function GuidedWalkLive() {
       <div style={styles.topBar}>
         <div style={styles.topBarContent}>
           <NavCircleButton onClick={() => setExitPromptOpen(true)} />
+
+          {isSimRoute && !done && (
+            <button
+              type="button"
+              onClick={triggerSimOffRouteAlert}
+              style={styles.simOffRouteButton}
+            >
+              Off-route Demo
+            </button>
+          )}
         </div>
       </div>
 
@@ -1281,23 +1296,14 @@ const styles = {
     'line-opacity': 0.9,
   }),
 
-  routeStartMarker: {
+  routeEndpointMarker: color => ({
     width: 14,
     height: 14,
-    background: ROUTE_START_MARKER_COLOR,
+    background: color,
     border: '3px solid white',
     borderRadius: '50%',
-    boxShadow: '0 2px 8px rgba(34, 197, 94, 0.6)',
-  },
-
-  routeEndMarker: {
-    width: 14,
-    height: 14,
-    background: ROUTE_END_MARKER_COLOR,
-    border: '3px solid white',
-    borderRadius: '50%',
-    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)',
-  },
+    boxShadow: `0 2px 8px ${color}99`,
+  }),
 
   poiMarker: {
     cursor: 'pointer',
@@ -1345,6 +1351,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
+  },
+
+  simOffRouteButton: {
+    height: 42,
+    padding: '0 16px',
+    border: 'none',
+    borderRadius: 999,
+    background: PRIMARY_BUTTON_COLOR,
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: 'pointer',
+    boxShadow: '0 8px 24px rgba(197, 62, 44, 0.28)',
   },
 
   gpsStatusPill: {

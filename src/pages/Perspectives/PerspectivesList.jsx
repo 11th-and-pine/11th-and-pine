@@ -88,7 +88,7 @@ const CAPITOL_ROUTES = {
     id: 4,
     title: "Tiana's Route",
     cardTitle: 'Mutual Aid & Care',
-    color: '#ec4899',
+    color: '#06b6d4',
     path: [
       [47.61534637433494, -122.31998484534672],
       [47.61537792391303, -122.31834587334546],

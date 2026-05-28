@@ -64,7 +64,7 @@ const CHOP_ROUTES = [
     title: "Tiana's Route",
     role: 'Mutual Aid Volunteer',
     desc: 'Follow the care work behind CHOP: supply runs, food tables, and everyday support.',
-    color: '#ec4899',
+    color: '#06b6d4',
     path: [
       [47.61534637433494, -122.31998484534672],
       [47.61537792391303, -122.31834587334546],

@@ -15,6 +15,7 @@ const AT_START_DISTANCE_KM = 0.08
 const INITIAL_ZOOM = 14
 const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
 const SIM_ROUTE_COLOR = '#8b5cf6'
+const DEFAULT_ROUTE_COLOR = '#D9603F'
 
 const toLngLat = ([lat, lng]) => [lng, lat]
 
@@ -130,6 +131,7 @@ export default function NavigateToStart() {
   const mapRef = useRef()
   const route = location.state?.route
   const startPos = route?.path?.[0] || START_POS
+  const routeColor = route?.color || DEFAULT_ROUTE_COLOR
   const isSimRoute = route?.color === SIM_ROUTE_COLOR
 
   const [userPos, setUserPos] = useState(() => (isSimRoute ? startPos : null))
@@ -336,13 +338,13 @@ export default function NavigateToStart() {
           <Layer
             id="start-circle-fill"
             type="fill"
-            paint={styles.startCircleFillPaint}
+            paint={styles.startCircleFillPaint(routeColor)}
           />
 
           <Layer
             id="start-circle-outline"
             type="line"
-            paint={styles.startCircleOutlinePaint}
+            paint={styles.startCircleOutlinePaint(routeColor)}
           />
         </Source>
 
@@ -366,7 +368,7 @@ export default function NavigateToStart() {
           latitude={startPos[0]}
           anchor="center"
         >
-          <div style={styles.startMarker} />
+          <div style={styles.startMarker(routeColor)} />
         </Marker>
       </Map>
 
@@ -477,29 +479,29 @@ const styles = {
   },
 
   directionsRoutePaint: {
-    'line-color': '#C53E2C',
+    'line-color': DEFAULT_ROUTE_COLOR,
     'line-width': 5,
     'line-opacity': 0.9,
   },
 
   fallbackNavLinePaint: {
-    'line-color': '#C53E2C',
+    'line-color': DEFAULT_ROUTE_COLOR,
     'line-width': 2,
     'line-opacity': 0.55,
     'line-dasharray': [2.5, 2],
   },
 
-  startCircleFillPaint: {
-    'fill-color': '#EED05D',
+  startCircleFillPaint: color => ({
+    'fill-color': color,
     'fill-opacity': 0.14,
-  },
+  }),
 
-  startCircleOutlinePaint: {
-    'line-color': '#EED05D',
+  startCircleOutlinePaint: color => ({
+    'line-color': color,
     'line-width': 1.5,
     'line-opacity': 0.8,
     'line-dasharray': [2, 2],
-  },
+  }),
 
   userMarker: {
     position: 'relative',
@@ -528,14 +530,14 @@ const styles = {
     boxShadow: '0 2px 10px rgba(197, 62, 44, 0.55)',
   },
 
-  startMarker: {
+  startMarker: color => ({
     width: 18,
     height: 18,
-    background: '#EED05D',
+    background: color,
     border: '3px solid white',
     borderRadius: '50%',
-    boxShadow: '0 2px 10px rgba(238, 208, 93, 0.65)',
-  },
+    boxShadow: `0 2px 10px ${color}99`,
+  }),
 
   topBar: {
     position: 'absolute',
