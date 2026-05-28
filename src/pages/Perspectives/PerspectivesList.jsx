@@ -7,6 +7,7 @@ import perspectiveChopIcon from '../../assets/images/tab-capitol-hill-icon.svg'
 import perspectiveLabelIcon from '../../assets/images/tab-labels-icon.png'
 import labelMapImage from '../../assets/images/label-paramount-theatre.jpg'
 import labelMapImage3 from '../../assets/images/label-westlake-tower.jpg'
+import labelMapImage4 from '../../assets/images/Cal_Anderson_Park.jpg'
 import seattlePoliceDepartmentImage from '../../assets/images/label-east-precinct.jpg'
 
 const LABELS = [
@@ -32,7 +33,7 @@ const LABELS = [
     address: '1635 11th Ave',
     position: [47.615353, -122.319993],
     desc: 'A central public park in Capitol Hill and a gathering point that became the heart of CHOP during the summer of 2020. Named for Washington’s first openly gay state legislator, it remains a site of community memory and mobilization.',
-    imageUrl: labelMapImage3,
+    imageUrl: labelMapImage4,
   },
   {
     id: 'poi-east-precinct',
