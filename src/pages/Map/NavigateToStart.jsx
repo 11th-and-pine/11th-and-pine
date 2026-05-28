@@ -415,7 +415,7 @@ export default function NavigateToStart() {
         ) : (
           <>
             <div style={styles.walkChoiceLabel}>
-              Go to the starting point first
+              Please head to the starting point to begin.
             </div>
 
             {userPos && (
