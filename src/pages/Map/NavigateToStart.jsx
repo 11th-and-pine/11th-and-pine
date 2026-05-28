@@ -14,6 +14,7 @@ const AT_START_DISTANCE_KM = 0.08
 
 const INITIAL_ZOOM = 14
 const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
+const SIM_ROUTE_COLOR = '#8b5cf6'
 
 const toLngLat = ([lat, lng]) => [lng, lat]
 
@@ -129,14 +130,15 @@ export default function NavigateToStart() {
   const mapRef = useRef()
   const route = location.state?.route
   const startPos = route?.path?.[0] || START_POS
+  const isSimRoute = route?.color === SIM_ROUTE_COLOR
 
-  const [userPos, setUserPos] = useState(null)
+  const [userPos, setUserPos] = useState(() => (isSimRoute ? startPos : null))
   const [walkingRoute, setWalkingRoute] = useState(null)
   const [directionsLoading, setDirectionsLoading] = useState(false)
   const [directionsError, setDirectionsError] = useState(false)
   // Lazy-initialize so we don't need a setState-in-effect when the API is missing.
   const [gpsError, setGpsError] = useState(
-    () => typeof navigator !== 'undefined' && !navigator.geolocation,
+    () => !isSimRoute && typeof navigator !== 'undefined' && !navigator.geolocation,
   )
   // Countdown shown after arriving at start; when it hits 0 we auto-navigate
   // into the live walking screen so the user doesn't need to tap a button.
@@ -146,7 +148,9 @@ export default function NavigateToStart() {
   const atStart = dist !== null && dist < AT_START_DISTANCE_KM
 
   const mapCenter = userPos ? getMidpoint(userPos, startPos) : startPos
-  const routeFeature = walkingRoute?.geometry?.coordinates?.length > 1
+  const routeFeature = isSimRoute
+    ? null
+    : walkingRoute?.geometry?.coordinates?.length > 1
     ? walkingRoute
     : userPos
       ? makeNavLine(userPos, startPos)
@@ -155,6 +159,10 @@ export default function NavigateToStart() {
   const routeDistanceText = formatDistance(walkingRoute?.properties?.distance)
 
   useEffect(() => {
+    if (isSimRoute) {
+      return
+    }
+
     if (!navigator.geolocation) {
       return
     }
@@ -169,7 +177,7 @@ export default function NavigateToStart() {
       () => setGpsError(true),
       { timeout: 10000 },
     )
-  }, [])
+  }, [isSimRoute])
 
   useEffect(() => {
     if (!userPos) {
@@ -199,7 +207,7 @@ export default function NavigateToStart() {
   }, [routeFeature, startPos, userPos])
 
   useEffect(() => {
-    if (!userPos || !MAPBOX_TOKEN) {
+    if (!userPos || !MAPBOX_TOKEN || isSimRoute) {
       return
     }
 
@@ -263,7 +271,7 @@ export default function NavigateToStart() {
     return () => {
       controller.abort()
     }
-  }, [startPos, userPos])
+  }, [isSimRoute, startPos, userPos])
 
   // Auto-start the walk 5 seconds after the user arrives at the starting
   // point. All state updates happen inside subscription callbacks (setInterval

@@ -13,7 +13,7 @@
 
       "routeId": "main",
       "audioUrl": "/audio/westlake.mp3",
-      "imageUrl": "src/assets/images/per_westlake.jpg",
+      "imageUrl": "src/assets/images/perspective-westlake.jpg",
 
       "location": [47.6131, -122.3371],
       "stopName": "Westlake Station",
@@ -27,13 +27,13 @@
     {
       "id": "2",
       "name": "Alex",
-      "role": "Community Organizer",
-      "shortBio": "Hidden connections and forgotten service paths.",
-      "fullBio": "Alex has been a community organizer in Capitol Hill for over a decade. During CHOP, Alex helped coordinate daily community meetings and resource distribution.",
+      "role": "LGBTQ+ Community Organizer",
+      "shortBio": "Alex organized from the perspective of queer community care, helping people find safety, supplies, and a place to be heard.",
+      "fullBio": "Alex is an LGBTQ+ community organizer who helped hold space during CHOP through daily check-ins, resource sharing, and informal safety networks. Their route follows moments where queer care, mutual aid, and protest strategy overlapped in the streets around Cal Anderson Park.",
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-1.mp3",
-      "imageUrl": "src/assets/images/alex.png",
+      "imageUrl": "src/assets/images/perspective-alex.png",
 
       "location": [47.6152, -122.325]
     },
@@ -41,38 +41,38 @@
       "id": "3",
       "name": "Jordan",
       "role": "Local Resident",
-      "shortBio": "Documenting the growth and ecological memory of urban green spaces.",
-      "fullBio": "Jordan has called Capitol Hill home for five years. Living just blocks away, Jordan witnessed the transformation of the neighborhood firsthand and participated in community events.",
+      "shortBio": "Jordan watched her neighborhood change day by day, balancing curiosity, concern, and solidarity as CHOP unfolded outside her door.",
+      "fullBio": "Jordan lived just blocks from Cal Anderson Park when CHOP took shape. From her apartment and the surrounding streets, she saw neighbors, organizers, artists, medics, and visitors turn everyday blocks into a contested public space. Her route reflects a resident’s view of how protest reshaped daily life in Capitol Hill.",
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-2.mp3",
-      "imageUrl": "src/assets/images/jordan.jpeg",
+      "imageUrl": "src/assets/images/perspective-jordan.jpg",
 
       "location": [47.616, -122.322]
     },
     {
       "id": "4",
       "name": "Sam",
-      "role": "Street Medic",
-      "shortBio": "Providing care and safety during moments of unrest.",
-      "fullBio": "Sam trained as an EMT and volunteered their skills during CHOP, helping set up and run the community medical station near Cal Anderson Park.",
+      "role": "Black Community Witness",
+      "shortBio": "Sam’s route centers the experience of a Black man moving through CHOP, where anger, memory, protection, and hope lived side by side.",
+      "fullBio": "Sam came to CHOP as a Black man carrying both exhaustion and hope. He had seen how quickly public grief could be dismissed, and he wanted to stand where people were refusing to look away. Along this route, Sam reflects on the weight of police violence, the relief of being surrounded by people demanding change, and the complicated feeling of watching a neighborhood become both a protest site and a place of care.",
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-3.mp3",
-      "imageUrl": "src/assets/images/sam.webp",
+      "imageUrl": "src/assets/images/perspective-sam.webp",
 
       "location": [47.614, -122.329]
     },
     {
       "id": "5",
-      "name": "Sam",
-      "role": "Street Medic",
-      "shortBio": "Providing care and safety during moments of unrest.",
-      "fullBio": "Sam trained as an EMT and volunteered their skills during CHOP, helping set up and run the community medical station near Cal Anderson Park.",
+      "name": "Tiana",
+      "role": "Mutual Aid Volunteer",
+      "shortBio": "Tiana’s route follows the quiet labor of care: food tables, supply runs, check-ins, and the work that helped keep people connected.",
+      "fullBio": "Tiana first came to CHOP with a backpack full of water bottles, snacks, and phone chargers. She did not think of herself as a leader, but she kept showing up where help was needed: carrying supplies, checking on strangers, sharing information, and making sure people had a place to rest. Her route tells the story of care work that often happened at the edges of the crowd, but shaped how the protest community survived day to day.",
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-3.mp3",
-      "imageUrl": "src/assets/images/sam.webp",
+      "imageUrl": "src/assets/images/perspective-tiana.jpg",
 
       "location": [47.614, -122.329]
     }

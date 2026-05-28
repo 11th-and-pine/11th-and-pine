@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPerspectives } from '../../services/dataService'
 import BottomNav from '../../components/BottomNav'
-import perspectiveWestlakeIcon from '../../assets/images/perspective-westlake-icon.png'
-import perspectiveChopIcon from '../../assets/images/perspective-chop-icon.svg'
-import perspectiveLabelIcon from '../../assets/images/perspective-label-icon.png'
-import labelMapImage from '../../assets/images/Paramounttheatre.jpg'
-import labelMapImage3 from '../../assets/images/westlaketower.jpg'
+import perspectiveWestlakeIcon from '../../assets/images/tab-westlake-icon.png'
+import perspectiveChopIcon from '../../assets/images/tab-capitol-hill-icon.svg'
+import perspectiveLabelIcon from '../../assets/images/tab-labels-icon.png'
+import labelMapImage from '../../assets/images/label-paramount-theatre.jpg'
+import labelMapImage3 from '../../assets/images/label-westlake-tower.jpg'
+import seattlePoliceDepartmentImage from '../../assets/images/label-east-precinct.jpg'
 
 const LABELS = [
   {
@@ -36,10 +37,10 @@ const LABELS = [
   {
     id: 'poi-east-precinct',
     title: 'Seattle Police Department — East Precinct',
-    address: '1519 12th Ave',
+    address: '1519 12th Ave, Capitol Hill',
     position: [47.61507932004624, -122.31704771348437],
-    desc: 'A key civic landmark at the edge of the CHOP area. The precinct’s temporary evacuation in June 2020 helped catalyze the autonomous zone that formed in the surrounding blocks.',
-    imageUrl: labelMapImage3,
+    desc: 'During the 2020 CHOP protests, the East Precinct became one of the defining sites of the occupation. After police temporarily left the building, the surrounding blocks became a protest zone filled with community organizing, mutual aid, art, and public debate over policing and public space.',
+    imageUrl: seattlePoliceDepartmentImage,
   },
 ]
 
@@ -47,21 +48,20 @@ const CAPITOL_ROUTES = {
   2: {
     id: 1,
     title: "Alex's Route",
+    cardTitle: 'Queer Care & Protest',
     color: '#EED05D',
     path: [
       [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615189438501694, -122.318284960829],
-      [47.61518751104897, -122.31702045803209],
-      [47.61507232602374, -122.31699950222341],
-      [47.615104, -122.316990],
-      [47.61507932004624, -122.31704771348437],
-      [47.616317, -122.317007],
+      [47.618724352103335, -122.32003383177313],
+      [47.6186916006176, -122.31948316444459],
+      [47.6183586260147, -122.31872194784339],
+      [47.61810752901002, -122.31941028200404],
     ],
   },
   3: {
     id: 2,
     title: "Jordan's Route",
+    cardTitle: 'Resident Witness',
     color: '#8b5cf6',
     path: [
       [47.61534637433494, -122.31998484534672],
@@ -73,6 +73,7 @@ const CAPITOL_ROUTES = {
   4: {
     id: 3,
     title: "Sam's Route",
+    cardTitle: 'Black Witness',
     color: '#22c55e',
     path: [
       [47.61534637433494, -122.31998484534672],
@@ -85,14 +86,18 @@ const CAPITOL_ROUTES = {
   },
   5: {
     id: 4,
-    title: 'Capitol Hill Route',
+    title: "Tiana's Route",
+    cardTitle: 'Mutual Aid & Care',
     color: '#ec4899',
     path: [
       [47.61534637433494, -122.31998484534672],
-      [47.618724352103335, -122.32003383177313],
-      [47.6186916006176, -122.31948316444459],
-      [47.6183586260147, -122.31872194784339],
-      [47.61810752901002, -122.31941028200404],
+      [47.61537792391303, -122.31834587334546],
+      [47.615189438501694, -122.318284960829],
+      [47.61518751104897, -122.31702045803209],
+      [47.61507232602374, -122.31699950222341],
+      [47.615104, -122.316990],
+      [47.61507932004624, -122.31704771348437],
+      [47.616317, -122.317007],
     ],
   },
 }
@@ -246,7 +251,7 @@ function PerspectivesList() {
           )}
 
           {activeTab === 'capital' &&
-            capitalHillItems.map((p, index) => (
+            capitalHillItems.map((p) => (
               <RouteCard
                 key={p.id}
                 item={p}
@@ -254,7 +259,7 @@ function PerspectivesList() {
                 onToggle={() => handleCardClick(p.id)}
                 onMoreInfo={() => navigate(`/perspectives/${p.id}`)}
                 onContinue={() => startWalking(CAPITOL_ROUTES[p.id])}
-                title={index === 0 ? 'Protest & Conflict' : 'Community & Support'}
+                title={CAPITOL_ROUTES[p.id]?.cardTitle || 'Community & Support'}
                 subtitle={`From ${p.name}’s View`}
                 progress={0}
               />

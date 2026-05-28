@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 
-import heroImg from '../../assets/images/onboarding1-2.jpg'
+import heroImg from '../../assets/images/onboarding-hero-background.jpg'
 
 function Onboarding2() {
   const navigate = useNavigate()

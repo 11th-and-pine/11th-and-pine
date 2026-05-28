@@ -4,7 +4,7 @@ import Map, { Layer, Marker, Source } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getPerspectiveById, getRouteById } from '../../services/dataService'
 import NavCircleButton from '../../components/NavCircleButton'
-import jordanProfile from '../../assets/images/jordan-profile.jpg'
+import jordanProfile from '../../assets/images/perspective-westlake-jordan-avatar.jpg'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
@@ -31,13 +31,10 @@ const CHOP_PREVIEW_ROUTES = {
     color: '#EED05D',
     path: [
       [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615189438501694, -122.318284960829],
-      [47.61518751104897, -122.31702045803209],
-      [47.61507232602374, -122.31699950222341],
-      [47.615104, -122.316990],
-      [47.61507932004624, -122.31704771348437],
-      [47.616317, -122.317007],
+      [47.618724352103335, -122.32003383177313],
+      [47.6186916006176, -122.31948316444459],
+      [47.6183586260147, -122.31872194784339],
+      [47.61810752901002, -122.31941028200404],
     ],
   },
   // Jordan — purple (sim demo route)
@@ -67,10 +64,13 @@ const CHOP_PREVIEW_ROUTES = {
     color: '#ec4899',
     path: [
       [47.61534637433494, -122.31998484534672],
-      [47.618724352103335, -122.32003383177313],
-      [47.6186916006176, -122.31948316444459],
-      [47.6183586260147, -122.31872194784339],
-      [47.61810752901002, -122.31941028200404],
+      [47.61537792391303, -122.31834587334546],
+      [47.615189438501694, -122.318284960829],
+      [47.61518751104897, -122.31702045803209],
+      [47.61507232602374, -122.31699950222341],
+      [47.615104, -122.316990],
+      [47.61507932004624, -122.31704771348437],
+      [47.616317, -122.317007],
     ],
   },
 }
@@ -323,7 +323,7 @@ function PerspectiveDetail() {
 
           <p style={styles.bioText}>
             {perspective.name === 'Westlake'
-              ? 'Jordan supported community efforts during the CHOP protests, helping with food distribution and mutual aid in Capitol Hill. His perspective highlights care, cooperation, and community action during the summer of 2020.'
+              ? 'Jordan supported community efforts during the CHOP protests, helping with food distribution and mutual aid in Capitol Hill. Her perspective highlights care, cooperation, and community action during the summer of 2020.'
               : perspective.shortBio}
           </p>
 

@@ -1,10 +1,11 @@
 import routesData from '../mock/routes.json'
 import perspectivesData from '../mock/perspectives.json'
 
-import westlakeImg from '../assets/images/per_westlake.jpg'
-import alexImg from '../assets/images/alex.png'
-import jordanImg from '../assets/images/jordan.jpeg'
-import samImg from '../assets/images/sam.webp'
+import westlakeImg from '../assets/images/perspective-westlake.jpg'
+import alexImg from '../assets/images/perspective-alex.png'
+import jordanImg from '../assets/images/perspective-jordan.jpg'
+import samImg from '../assets/images/perspective-sam.webp'
+import tianaImg from '../assets/images/perspective-tiana.jpg'
 
 export const getRoutes = () => {
   return routesData.routes
@@ -18,11 +19,9 @@ export const getPerspectives = () => {
   return perspectivesData.perspectives.map(p => {
     if (p.id === "1") return { ...p, imageUrl: westlakeImg }
     if (p.id === "2") return { ...p, imageUrl: alexImg }
-    if (p.id === "3") return { ...p, imageUrl: jordanImg }
-    if (p.id === "4") return { ...p, imageUrl: samImg }
-    // 4th Capitol Hill card — content copied from Sam for now; user will
-    // customize later. Reuse Sam's headshot until a new one is provided.
-    if (p.id === "5") return { ...p, imageUrl: samImg }
+    if (p.id === "3") return { ...p, imageUrl: samImg }
+    if (p.id === "4") return { ...p, imageUrl: jordanImg }
+    if (p.id === "5") return { ...p, imageUrl: tianaImg }
     return p
   })
 }

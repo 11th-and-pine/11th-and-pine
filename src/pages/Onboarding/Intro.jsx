@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import icon from '../../assets/images/intro-icon.png'
+import icon from '../../assets/images/app-logo-11th-pine.png'
 
 export default function Intro() {
   const navigate = useNavigate()
