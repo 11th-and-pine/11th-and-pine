@@ -632,7 +632,11 @@ export default function RouteOverview() {
                 <span>About Us</span>
               </button>
 
-              <button className="sidebar-nav-item" type="button">
+              <button
+                className="sidebar-nav-item"
+                type="button"
+                onClick={() => navigate('/privacy')}
+              >
                 <SidebarIcon type="privacy" />
                 <span>Privacy</span>
               </button>

@@ -95,7 +95,7 @@ function Onboarding2() {
           </button>
 
           <p
-            onClick={() => navigate('')}
+            onClick={() => navigate('/privacy')}
             className="onboarding-privacy"
           >
             Privacy Policy
