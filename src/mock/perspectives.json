@@ -7,9 +7,9 @@
       "featuredShortTitle": "Westlake",
       "featuredTitle": "WESTLAKE PROTEST",
 
-      "shortBio": "Walk through the heart of CHOP and explore key protest spaces.",
+      "shortBio": "Follow the march from Westlake toward Capitol Hill and the streets that became CHOP.",
 
-      "fullBio": "Walk through the heart of CHOP and listen to stories tied to the streets where events unfolded. This route traces several key gathering points inside the Capitol Hill Autonomous Zone, including spaces where community assemblies, mutual aid efforts, and protest art emerged during the summer of 2020.",
+      "fullBio": "This route begins downtown, where people gathered before marching east toward Capitol Hill in June 2020. It follows the movement from Westlake through Pike/Pine toward Cal Anderson Park, connecting public grief, protest chants, and the city streets that led into the CHOP area.",
 
       "routeId": "main",
       "audioUrl": "/audio/westlake.mp3",
@@ -28,8 +28,8 @@
       "id": "2",
       "name": "Alex",
       "role": "LGBTQ+ Community Organizer",
-      "shortBio": "Alex organized from the perspective of queer community care, helping people find safety, supplies, and a place to be heard.",
-      "fullBio": "Alex is an LGBTQ+ community organizer who helped hold space during CHOP through daily check-ins, resource sharing, and informal safety networks. Their route follows moments where queer care, mutual aid, and protest strategy overlapped in the streets around Cal Anderson Park.",
+      "shortBio": "Alex’s CHOP route follows queer care work: checking on people, sharing supplies, and helping keep protest space safer.",
+      "fullBio": "Alex is an LGBTQ+ community organizer who helped hold space during CHOP through daily check-ins, resource sharing, and informal safety networks. Their route follows moments where queer care, mutual aid, and protest strategy overlapped in the streets around Cal Anderson Park during the summer of 2020.",
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-1.mp3",
@@ -41,8 +41,8 @@
       "id": "3",
       "name": "Jordan",
       "role": "Local Resident",
-      "shortBio": "Jordan watched her neighborhood change day by day, balancing curiosity, concern, and solidarity as CHOP unfolded outside her door.",
-      "fullBio": "Jordan lived just blocks from Cal Anderson Park when CHOP took shape. From her apartment and the surrounding streets, she saw neighbors, organizers, artists, medics, and visitors turn everyday blocks into a contested public space. Her route reflects a resident’s view of how protest reshaped daily life in Capitol Hill.",
+      "shortBio": "Jordan’s route follows a nearby resident watching CHOP reshape ordinary blocks into contested public space.",
+      "fullBio": "Jordan lived just blocks from Cal Anderson Park when CHOP took shape. From her apartment and the surrounding streets, she saw neighbors, organizers, artists, medics, and visitors turn everyday blocks into a contested public space. Her route reflects a resident’s view of how protest reshaped daily life in Capitol Hill during the summer of 2020.",
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-2.mp3",
@@ -54,7 +54,7 @@
       "id": "4",
       "name": "Sam",
       "role": "Black Community Witness",
-      "shortBio": "Sam’s route centers the experience of a Black man moving through CHOP, where anger, memory, protection, and hope lived side by side.",
+      "shortBio": "Sam’s CHOP route centers Black witness, public grief, and the demand that police violence not be ignored.",
       "fullBio": "Sam came to CHOP as a Black man carrying both exhaustion and hope. He had seen how quickly public grief could be dismissed, and he wanted to stand where people were refusing to look away. Along this route, Sam reflects on the weight of police violence, the relief of being surrounded by people demanding change, and the complicated feeling of watching a neighborhood become both a protest site and a place of care.",
 
       "routeId": "main",
@@ -67,8 +67,8 @@
       "id": "5",
       "name": "Tiana",
       "role": "Mutual Aid Volunteer",
-      "shortBio": "Tiana’s route follows the quiet labor of care: food tables, supply runs, check-ins, and the work that helped keep people connected.",
-      "fullBio": "Tiana first came to CHOP with a backpack full of water bottles, snacks, and phone chargers. She did not think of herself as a leader, but she kept showing up where help was needed: carrying supplies, checking on strangers, sharing information, and making sure people had a place to rest. Her route tells the story of care work that often happened at the edges of the crowd, but shaped how the protest community survived day to day.",
+      "shortBio": "Tiana’s CHOP route follows mutual aid: food tables, supply runs, check-ins, and everyday care.",
+      "fullBio": "Tiana first came to CHOP with a backpack full of water bottles, snacks, and phone chargers. She did not think of herself as a leader, but she kept showing up where help was needed: carrying supplies, checking on strangers, sharing information, and making sure people had a place to rest. Her route tells the story of care work that often happened at the edges of the crowd, but shaped how the protest community survived day to day during CHOP.",
 
       "routeId": "main",
       "audioUrl": "/audio/perspective-3.mp3",

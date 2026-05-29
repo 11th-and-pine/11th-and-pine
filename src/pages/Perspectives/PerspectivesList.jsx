@@ -16,7 +16,7 @@ const LABELS = [
     title: 'Paramount Theatre',
     address: '911 Pine St',
     position: [47.613380, -122.331806],
-    desc: 'A historic gathering place where entertainment, culture, and public life intersected in downtown Seattle. Explore how this landmark connects to stories of community, performance, and change.',
+    desc: 'During the 2020 protests, the march from Westlake moved past downtown landmarks like Paramount Theatre on its way toward Capitol Hill. This stop connects the route to the citywide scale of the uprising and the public spaces where people gathered, chanted, and moved together.',
     imageUrl: labelMapImage,
   },
   {
@@ -24,7 +24,7 @@ const LABELS = [
     title: 'Westlake Tower',
     address: '1601 5th Ave',
     position: [47.61246495850918, -122.33745074674492],
-    desc: 'A landmark of Seattle’s changing skyline that reflects the city’s growth and shifting identity. Experience stories connected to development, memory, and life in downtown Seattle.',
+    desc: 'Near Westlake, marchers gathered before moving east toward Capitol Hill. This downtown starting point marks the shift from a central civic gathering space into a longer walk of protest, grief, solidarity, and collective movement toward CHOP.',
     imageUrl: labelMapImage3,
   },
   {
@@ -32,13 +32,13 @@ const LABELS = [
     title: 'Cal Anderson Park',
     address: '1635 11th Ave',
     position: [47.615353, -122.319993],
-    desc: 'A central public park in Capitol Hill and a gathering point that became the heart of CHOP during the summer of 2020. Named for Washington’s first openly gay state legislator, it remains a site of community memory and mobilization.',
+    desc: 'Cal Anderson Park became one of the emotional centers of CHOP, where people rested, organized, shared food, made art, held conversations, and returned day after day. The park remains tied to memories of care, conflict, and community presence during the summer of 2020.',
     imageUrl: labelMapImage4,
   },
   {
     id: 'poi-east-precinct',
     title: 'Seattle Police Department — East Precinct',
-    address: '1519 12th Ave, Capitol Hill',
+    address: '1519 12th Ave',
     position: [47.61507932004624, -122.31704771348437],
     desc: 'During the 2020 CHOP protests, the East Precinct became one of the defining sites of the occupation. After police temporarily left the building, the surrounding blocks became a protest zone filled with community organizing, mutual aid, art, and public debate over policing and public space.',
     imageUrl: seattlePoliceDepartmentImage,

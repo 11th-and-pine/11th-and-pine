@@ -3,14 +3,14 @@
     {
       "id": "main",
       "name": "Main Route",
-      "description": "Walk from Westlake Station to Cal Anderson Park and discover the story of CHOP.",
+      "description": "Follow the 2020 protest route from Westlake toward Capitol Hill and the streets that became CHOP.",
       "duration": "30 min",
       "distance": "1.2 miles",
       "stops": [
         {
           "id": 1,
           "name": "Westlake Station",
-          "description": "The starting point of your journey. CHOP began here in June 2020.",
+          "description": "A downtown gathering point where marchers began moving east toward Capitol Hill during the 2020 protests.",
           "position": [47.6131, -122.3371],
           "order": 1,
           "audioUrl": "/audio/stop-1.mp3",
@@ -19,7 +19,7 @@
         {
           "id": 2,
           "name": "11th & Pine",
-          "description": "The heart of CHOP, where community gathered and voices were heard.",
+          "description": "A defining CHOP intersection where protest, mutual aid, public debate, and community presence converged.",
           "position": [47.6152, -122.3189],
           "order": 2,
           "audioUrl": "/audio/stop-2.mp3",
@@ -28,7 +28,7 @@
         {
           "id": 3,
           "name": "Cal Anderson Park",
-          "description": "The final destination and center of the CHOP community.",
+          "description": "A central CHOP gathering space where people rested, organized, shared resources, and returned throughout the summer of 2020.",
           "position": [47.6165, -122.3197],
           "order": 3,
           "audioUrl": "/audio/stop-3.mp3",

@@ -9,6 +9,8 @@ import chopCardImage from '../../assets/images/route-card-capitol-hill.png'
 import introIcon from '../../assets/images/app-logo-11th-pine.png'
 import paramountImage from '../../assets/images/label-paramount-theatre.jpg'
 import westlakeTowerImage from '../../assets/images/label-westlake-tower.jpg'
+import calAndersonImage from '../../assets/images/Cal_Anderson_Park.jpg'
+import eastPrecinctImage from '../../assets/images/label-east-precinct.jpg'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
@@ -33,7 +35,7 @@ const CHOP_ROUTES = [
     perspectiveId: '2',
     title: "Alex's Route",
     role: 'LGBTQ+ Community Organizer',
-    desc: 'Follow Alex’s route through queer care, protest strategy, and mutual aid.',
+    desc: 'Follow Alex’s CHOP route through queer care, protest strategy, and mutual aid around Cal Anderson Park.',
     color: '#EED05D',
     path: [
     [47.61534637433494, -122.31998484534672],
@@ -47,7 +49,7 @@ const CHOP_ROUTES = [
     perspectiveId: '3',
     title: "Jordan's Route",
     role: 'Local Resident',
-    desc: 'See the neighborhood through the eyes of a woman who lived nearby.',
+    desc: 'See CHOP through the eyes of a nearby resident watching daily life, protest, and public space collide.',
     color: '#8b5cf6',
     path: [
     [47.61534637433494, -122.31998484534672],
@@ -75,7 +77,7 @@ const CHOP_ROUTES = [
     perspectiveId: '5',
     title: "Tiana's Route",
     role: 'Mutual Aid Volunteer',
-    desc: 'Follow the care work behind CHOP: supply runs, food tables, and everyday support.',
+    desc: 'Follow the mutual aid work behind CHOP: supply runs, food tables, check-ins, and everyday support.',
     color: '#06b6d4',
     path: [
     [47.61534637433494, -122.31998484534672],
@@ -96,7 +98,7 @@ const POIS = [
     name: 'Westlake Tower',
     title: 'Westlake Tower',
     address: '1601 5th Ave',
-    desc: 'A landmark of Seattle’s changing skyline that reflects the city’s growth and shifting identity. Experience stories connected to development, memory, and life in downtown Seattle.',
+    desc: 'Near Westlake, marchers gathered before moving east toward Capitol Hill. This downtown starting point marks the shift from a central civic gathering space into a longer walk of protest, grief, solidarity, and collective movement toward CHOP.',
     imageUrl: westlakeTowerImage,
   },
   {
@@ -105,7 +107,7 @@ const POIS = [
     name: 'Paramount Theatre',
     title: 'Paramount Theatre',
     address: '911 Pine St',
-    desc: 'A historic gathering place where entertainment, culture, and public life intersected in downtown Seattle. Explore how this landmark connects to stories of community, performance, and change.',
+    desc: 'During the 2020 protests, the march from Westlake moved past downtown landmarks like Paramount Theatre on its way toward Capitol Hill. This stop connects the route to the citywide scale of the uprising and the public spaces where people gathered, chanted, and moved together.',
     imageUrl: paramountImage,
   }
 ]
@@ -114,16 +116,20 @@ const CAPITOL_POIS = [
   {
     id: 'east-precinct',
     position: [47.61507932004624, -122.31704771348437],
-    name: 'Seattle Police Department - East Precinct',
-    title: 'Seattle Police Department - East Precinct',
-    desc: 'A key civic landmark at the edge of the CHOP area.',
+    name: 'Seattle Police Department — East Precinct',
+    title: 'Seattle Police Department — East Precinct',
+    address: '1519 12th Ave',
+    desc: 'During the 2020 CHOP protests, the East Precinct became one of the defining sites of the occupation. After police temporarily left the building, the surrounding blocks became a protest zone filled with community organizing, mutual aid, art, and public debate over policing and public space.',
+    imageUrl: eastPrecinctImage,
   },
   {
     id: 'cal-anderson-park',
     position: [47.615353, -122.319993],
     name: 'Cal Anderson Park',
     title: 'Cal Anderson Park',
-    desc: 'A central public park in Capitol Hill and a gathering point that became the heart of CHOP during the summer of 2020.',
+    address: '1635 11th Ave',
+    desc: 'Cal Anderson Park became one of the emotional centers of CHOP, where people rested, organized, shared food, made art, held conversations, and returned day after day. The park remains tied to memories of care, conflict, and community presence during the summer of 2020.',
+    imageUrl: calAndersonImage,
   },
 ]
 

@@ -65,8 +65,7 @@ const POIS = [
     audioUrl: '/audio/westlake-plaza.mp3',
     name: 'Westlake Plaza',
     title: 'Where the March Began',
-    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.',
-    ttsText: 'You are at Westlake Plaza. This is the starting point for the walk.'
+    desc: 'On June 1st, 2020, thousands gathered at Westlake Plaza before marching east up Pine Street. Speakers read names of those lost to police violence as the crowd swelled past the monorail and spilled into the streets.'
   },
   {
     id: 2,
@@ -74,8 +73,7 @@ const POIS = [
     audioUrl: '/audio/westlake-tower.mp3',
     name: 'Westlake Tower',
     title: 'Westlake Tower',
-    desc: 'A landmark of Seattle\'s changing skyline that reflects the city\'s growth and shifting identity.',
-    ttsText: 'You are near Westlake Tower.'
+    desc: 'Near Westlake, marchers gathered before moving east toward Capitol Hill. This downtown starting point marks the shift from a central civic gathering space into a longer walk of protest, grief, solidarity, and collective movement toward CHOP.'
   },
   {
     id: 3,
@@ -83,8 +81,7 @@ const POIS = [
     audioUrl: '/audio/paramount-theatre.mp3',
     name: 'Paramount Theatre',
     title: 'A Cultural Landmark on Pine',
-    desc: 'Paramount Theatre anchors this stretch of Pine Street as a historic performance space and downtown landmark. Its presence connects the route to Seattle\'s long history of gathering, performance, and public life.',
-    ttsText: 'You are near Paramount Theatre on Pine Street.'
+    desc: 'During the 2020 protests, the march from Westlake moved past downtown landmarks like Paramount Theatre on its way toward Capitol Hill. This stop connects the route to the citywide scale of the uprising and the public spaces where people gathered, chanted, and moved together.'
   },
   {
     id: 4,
@@ -92,8 +89,7 @@ const POIS = [
     audioUrl: '/audio/pike-pine.mp3',
     name: 'Pike/Pine Corridor',
     title: 'From Auto Row to Activism',
-    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.',
-    ttsText: 'You are moving through the Pike Pine corridor. Pause here, look around, and then continue east toward Capitol Hill.'
+    desc: 'Once lined with car showrooms in the 1920s, Pike/Pine became the heart of Seattle\'s queer community by the 1990s. The corridor\'s brick warehouses and late-night venues made it a natural gathering point during the 2020 uprising.'
   },
   {
     id: 5,
@@ -101,8 +97,7 @@ const POIS = [
     audioUrl: '/audio/cal-anderson.mp3',
     name: 'Cal Anderson Park',
     title: 'The Autonomous Zone',
-    desc: 'For nearly a month in June 2020, several blocks around Cal Anderson Park became the Capitol Hill Organized Protest — a self-declared police-free zone with community gardens, open mics, and a No Cop Co-op. Named for Washington\'s first openly gay legislator, the park remains a site of memory and mobilization.',
-    ttsText: 'You are near Cal Anderson Park.'
+    desc: 'Cal Anderson Park became one of the emotional centers of CHOP, where people rested, organized, shared food, made art, held conversations, and returned day after day. The park remains tied to memories of care, conflict, and community presence during the summer of 2020.'
   },
 ]
 
@@ -224,7 +219,6 @@ export default function GuidedWalkLive() {
   const location = useLocation()
   const mapRef = useRef()
   const audioRef = useRef(null)
-  const speechRef = useRef(null)
   const playedPOIs = useRef(new Set())
   const watchIdRef = useRef(null)
 
@@ -284,62 +278,9 @@ export default function GuidedWalkLive() {
   const [audioCurrentTime, setAudioCurrentTime] = useState(0)
   const [currentAudioPOI, setCurrentAudioPOI] = useState(null)
   const [audioError, setAudioError] = useState(false)
-  const [usingTTS, setUsingTTS] = useState(false)
   useEffect(() => { audioPlayingRef.current = audioPlaying }, [audioPlaying])
 
   const currentPoint = userLocation || plannedRoute[0]
-
-  const stopSpeech = () => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel()
-    }
-    speechRef.current = null
-    setUsingTTS(false)
-  }
-
-  const speakPOIText = (poi) => {
-    if (!poi || typeof window === 'undefined' || !window.speechSynthesis) {
-      setAudioPlaying(false)
-      setAudioError(true)
-      return
-    }
-
-    if (speechRef.current?.poiId === poi.id) {
-      return
-    }
-
-    window.speechSynthesis.cancel()
-
-    const utterance = new SpeechSynthesisUtterance(poi.ttsText || poi.desc)
-    utterance.poiId = poi.id
-    utterance.rate = 0.94
-    utterance.pitch = 1
-    utterance.onstart = () => {
-      setUsingTTS(true)
-      setAudioError(false)
-      setAudioPlaying(true)
-    }
-    utterance.onend = () => {
-      speechRef.current = null
-      setUsingTTS(false)
-      setAudioPlaying(false)
-      setAudioProgress(100)
-    }
-    utterance.onerror = () => {
-      speechRef.current = null
-      setUsingTTS(false)
-      setAudioPlaying(false)
-      setAudioError(true)
-    }
-
-    speechRef.current = utterance
-    setUsingTTS(true)
-    setAudioError(false)
-    setAudioProgress(0)
-    setAudioCurrentTime(0)
-    setAudioDuration(0)
-    window.speechSynthesis.speak(utterance)
-  }
 
   // ──────────────────────────────────────────────────────────
   // Geolocation: start watching on mount, stop on unmount.
@@ -380,14 +321,16 @@ export default function GuidedWalkLive() {
           setAudioProgress(0)
           setAudioCurrentTime(0)
           setAudioDuration(0)
-          stopSpeech()
           const a = audioRef.current
           if (a) {
             a.src = poi.audioUrl
             a.currentTime = 0
             a.play()
               .then(() => setAudioPlaying(true))
-              .catch(() => speakPOIText(poi))
+              .catch(() => {
+                setAudioPlaying(false)
+                setAudioError(true)
+              })
           }
         }
 
@@ -469,7 +412,6 @@ export default function GuidedWalkLive() {
         // Prime the audio bar: fake POI, 10-min duration, "playing".
         // No <audio> element is touched — we tick state forward manually.
         setCurrentAudioPOI(SIM_AUDIO_POI)
-        setUsingTTS(false)
         setAudioError(false)
         setAudioDuration(SIM_AUDIO_DURATION_SEC)
         setAudioCurrentTime(0)
@@ -594,11 +536,10 @@ export default function GuidedWalkLive() {
   // Sync audioPlaying state with the actual <audio> element (for the ▶/⏸ button)
   useEffect(() => {
     const a = audioRef.current
-    if (usingTTS) return
     if (!a || !a.src) return
     if (audioPlaying) a.play().catch(() => setAudioPlaying(false))
     else a.pause()
-  }, [audioPlaying, usingTTS])
+  }, [audioPlaying])
 
   // ──────────────────────────────────────────────────────────
   // Camera follows the user
@@ -641,16 +582,11 @@ export default function GuidedWalkLive() {
     setAudioCurrentTime(0)
     setAudioDuration(0)
     setAudioError(false)
-    setUsingTTS(false)
   }
 
   // Clear played-POI tracking and reset the <audio> element on route change.
   useEffect(() => {
     playedPOIs.current.clear()
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel()
-    }
-    speechRef.current = null
     const a = audioRef.current
     if (a) {
       a.pause()
@@ -848,7 +784,6 @@ export default function GuidedWalkLive() {
         preload="auto"
         onLoadedMetadata={() => {
           if (audioRef.current) {
-            setUsingTTS(false)
             setAudioError(false)
             setAudioDuration(audioRef.current.duration)
           }
@@ -870,11 +805,7 @@ export default function GuidedWalkLive() {
           setAudioProgress(0)
           setAudioCurrentTime(0)
           setAudioDuration(0)
-          if (currentAudioPOI) {
-            speakPOIText(currentAudioPOI)
-          } else {
-            setAudioError(true)
-          }
+          setAudioError(true)
         }}
       />
 
@@ -892,21 +823,9 @@ export default function GuidedWalkLive() {
                   setAudioPlaying(prev => !prev)
                   return
                 }
-                if (usingTTS) {
-                  if (audioPlaying) {
-                    window.speechSynthesis.pause()
-                    setAudioPlaying(false)
-                  } else {
-                    window.speechSynthesis.resume()
-                    setAudioPlaying(true)
-                  }
-                  return
-                }
                 const a = audioRef.current
                 if (!a || !a.src || audioError) return
-                if (a.paused) a.play().catch(() => {
-                  if (currentAudioPOI) speakPOIText(currentAudioPOI)
-                })
+                if (a.paused) a.play().catch(() => setAudioError(true))
                 else a.pause()
               }}
               style={styles.audioPlayButton(!currentAudioPOI || audioError)}
@@ -934,8 +853,6 @@ export default function GuidedWalkLive() {
               <div style={styles.audioRouteTitle(routeColor)}>
                 {audioError
                   ? 'Missing audio file'
-                  : usingTTS
-                    ? 'Text narration'
                   : currentAudioPOI
                   ? currentAudioPOI.name
                   : (branchRoute ? branchRoute.title : 'Westlake Route')}

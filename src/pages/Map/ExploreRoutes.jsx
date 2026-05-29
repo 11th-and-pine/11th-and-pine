@@ -14,7 +14,7 @@ const CHOP_ROUTES = [
     perspectiveId: '2', // Alex — see src/mock/perspectives.json
     title: "Alex's Route",
     role: 'LGBTQ+ Community Organizer',
-    desc: 'Follow Alex’s route through queer care, protest strategy, and mutual aid.',
+    desc: 'Follow Alex’s CHOP route through queer care, protest strategy, and mutual aid around Cal Anderson Park.',
     color: '#EED05D',
     path: [
       [47.61534637433494, -122.31998484534672],
@@ -30,7 +30,7 @@ const CHOP_ROUTES = [
     perspectiveId: '3', // Jordan
     title: "Jordan's Route",
     role: 'Local Resident',
-    desc: 'See the neighborhood through the eyes of a woman who lived nearby.',
+    desc: 'See CHOP through the eyes of a nearby resident watching daily life, protest, and public space collide.',
     color: '#8b5cf6',
     path: [
       [47.61534637433494, -122.31998484534672],
@@ -63,7 +63,7 @@ const CHOP_ROUTES = [
     perspectiveId: '5',
     title: "Tiana's Route",
     role: 'Mutual Aid Volunteer',
-    desc: 'Follow the care work behind CHOP: supply runs, food tables, and everyday support.',
+    desc: 'Follow the mutual aid work behind CHOP: supply runs, food tables, check-ins, and everyday support.',
     color: '#06b6d4',
     path: [
       [47.61534637433494, -122.31998484534672],
@@ -81,7 +81,7 @@ const CHOP_ROUTES = [
     id: 5,
     title: 'The Vigil Walk',
     role: 'Community Elder',
-    desc: 'Trace the candlelit path of nightly vigils through the north side of the zone.',
+    desc: 'Trace a CHOP night route through the north side of the zone, where vigils, reflection, and community presence continued after dark.',
     color: '#06b6d4',
     path: [
       [47.61534637433494, -122.31998484534672],
