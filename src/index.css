@@ -213,6 +213,86 @@ button, input, select, textarea, optgroup {
   line-height: 1.55;
 }
 
+/* ── About Us ─────────────────────────────────────────────────────────────── */
+.about-page {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: #F3F3F1;
+  color: #111827;
+}
+
+.about-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding:
+    calc(96px + var(--safe-top, 0px))
+    clamp(26px, 7vw, 36px)
+    calc(44px + var(--safe-bottom, 0px));
+}
+
+.about-hero {
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.about-kicker {
+  margin-bottom: 16px;
+  color: #C53E2C;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.about-hero p,
+.about-card p,
+.about-thanks p {
+  color: #505F76;
+  font-size: 16px;
+  line-height: 1.58;
+}
+
+.about-card {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.about-card h2,
+.about-thanks h2 {
+  margin-bottom: 12px;
+  color: #000;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.about-card p + p {
+  margin-top: 12px;
+}
+
+.about-card a {
+  color: #C53E2C;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.about-thanks a {
+  color: #C53E2C;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.about-thanks {
+  margin-top: 34px;
+  text-align: center;
+}
+
 .active-onboarding-dot {
   background-color: #EED05D;
 }

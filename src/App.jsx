@@ -10,6 +10,7 @@ import ExploreRoutes from './pages/Map/ExploreRoutes'
 import PerspectivesList from './pages/Perspectives/PerspectivesList'
 import PerspectiveDetail from './pages/Perspectives/PerspectiveDetail'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import AboutUs from './pages/AboutUs'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/map/explore" element={<ExploreRoutes />} />
         <Route path="/perspectives" element={<PerspectivesList />} />
         <Route path="/perspectives/:id" element={<PerspectiveDetail />} />
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
       </Routes>
     </div>

@@ -639,7 +639,11 @@ export default function RouteOverview() {
                 <span>Dashboard</span>
               </button>
 
-              <button className="sidebar-nav-item" type="button">
+              <button
+                className="sidebar-nav-item"
+                type="button"
+                onClick={() => navigate('/about')}
+              >
                 <SidebarIcon type="info" />
                 <span>About Us</span>
               </button>
@@ -654,11 +658,6 @@ export default function RouteOverview() {
               </button>
 
               <div className="sidebar-divider" />
-
-              <button className="sidebar-nav-item" type="button">
-                <SidebarIcon type="mail" />
-                <span>Connect</span>
-              </button>
 
               <button className="sidebar-nav-item" type="button">
                 <SidebarIcon type="support" />
