@@ -50,9 +50,8 @@ export default function AboutUs() {
           <h2>Special thanks</h2>
           <p>
             We're grateful to our sponsors at the UW School of Drama, our
-            testers, and our capstone instructors André Bearfield (
-            <a href="mailto:abear@uw.edu">abear@uw.edu</a>) and Alex Zhang (
-            <a href="mailto:alexzzy@uw.edu">alexzzy@uw.edu</a>).
+            testers, and our capstone instructors André Bearfield and Alex
+            Zhang.
           </p>
         </section>
       </main>
