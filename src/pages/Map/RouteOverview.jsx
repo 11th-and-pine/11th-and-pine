@@ -298,6 +298,7 @@ export default function RouteOverview() {
   const [directionsPaths, setDirectionsPaths] = useState({})
 
   const isCapitolSelected = selectedArea === 'capitol'
+  const canStartJourney = !isCapitolSelected || selectedChopRouteIndex !== null
   const displayPOIS = isCapitolSelected ? CAPITOL_POIS : POIS
   const westlakeDisplayPath = directionsPaths.westlake || WESTLAKE_ROUTE
   const getChopDisplayPath = useCallback(
@@ -417,7 +418,11 @@ export default function RouteOverview() {
 
   function handleDownloadConfirm() {
     if (isCapitolSelected) {
-      const routeIndex = selectedChopRouteIndex ?? 0
+      if (selectedChopRouteIndex === null) {
+        return
+      }
+
+      const routeIndex = selectedChopRouteIndex
       navigate('/map/navigate', {
         state: {
           route: CHOP_ROUTES[routeIndex],
@@ -767,7 +772,16 @@ export default function RouteOverview() {
 
         <button
           className="start-button"
-          onClick={() => setDownloadPromptOpen(true)}
+          type="button"
+          disabled={!canStartJourney}
+          aria-disabled={!canStartJourney}
+          onClick={() => {
+            if (!canStartJourney) {
+              return
+            }
+
+            setDownloadPromptOpen(true)
+          }}
         >
           Start Journey
         </button>

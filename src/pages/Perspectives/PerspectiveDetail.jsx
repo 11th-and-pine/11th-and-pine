@@ -38,7 +38,7 @@ const CHOP_PREVIEW_ROUTES = {
       [47.61810752901002, -122.31941028200404],
     ],
   },
-  // Jordan — purple (sim demo route)
+  // Jordan — purple
   '3': {
     color: '#8b5cf6',
     path: [
@@ -60,7 +60,7 @@ const CHOP_PREVIEW_ROUTES = {
       [47.61871203860535, -122.31707799892192],
     ],
   },
-  // 4th library entry — pink
+  // Tiana — simulation demo route
   '5': {
     color: '#06b6d4',
     path: [

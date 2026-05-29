@@ -957,6 +957,13 @@ button, input, select, textarea, optgroup {
   box-shadow: 0 3px 3px rgba(0, 0, 0, 0.24);
 }
 
+.start-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+  transform: none;
+}
+
 .route-cards-row {
   position: absolute;
   top: 96px;

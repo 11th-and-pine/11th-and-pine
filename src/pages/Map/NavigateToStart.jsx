@@ -14,7 +14,7 @@ const AT_START_DISTANCE_KM = 0.08
 
 const INITIAL_ZOOM = 14
 const WALKING_DIRECTIONS_PROFILE = 'mapbox/walking'
-const SIM_ROUTE_COLOR = '#8b5cf6'
+const SIM_ROUTE_PERSPECTIVE_ID = '5'
 const DEFAULT_ROUTE_COLOR = '#D9603F'
 
 const toLngLat = ([lat, lng]) => [lng, lat]
@@ -132,7 +132,7 @@ export default function NavigateToStart() {
   const route = location.state?.route
   const startPos = route?.path?.[0] || START_POS
   const routeColor = route?.color || DEFAULT_ROUTE_COLOR
-  const isSimRoute = route?.color === SIM_ROUTE_COLOR
+  const isSimRoute = route?.perspectiveId === SIM_ROUTE_PERSPECTIVE_ID
 
   const [userPos, setUserPos] = useState(() => (isSimRoute ? startPos : null))
   const [walkingRoute, setWalkingRoute] = useState(null)
