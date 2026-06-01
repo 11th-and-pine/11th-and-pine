@@ -6,7 +6,7 @@ export const CHOP_ROUTES = [
     theme: 'Queer Care',
     cardTitle: 'Queer Care & Protest',
     role: 'LGBTQ+ Community Organizer',
-    duration: '35 MIN',
+    duration: '15 MIN',
     desc: 'Follow Alex’s CHOP route through queer care, protest strategy, and mutual aid around Cal Anderson Park.',
     color: '#EED05D',
     path: [
@@ -24,7 +24,7 @@ export const CHOP_ROUTES = [
     theme: 'Protest & Conflict',
     cardTitle: 'Resident Witness',
     role: 'Local Resident',
-    duration: '45 MIN',
+    duration: '18 MIN',
     desc: 'See CHOP through the eyes of a nearby resident watching daily life, protest, and public space collide.',
     color: '#8b5cf6',
     path: [
@@ -41,7 +41,7 @@ export const CHOP_ROUTES = [
     theme: 'Black Witness',
     cardTitle: 'Black Witness',
     role: 'Black Community Witness',
-    duration: '40 MIN',
+    duration: '20 MIN',
     desc: 'Move through CHOP from the perspective of a Black man witnessing protest, care, and public grief.',
     color: '#22c55e',
     path: [
@@ -60,7 +60,7 @@ export const CHOP_ROUTES = [
     theme: 'Mutual Aid',
     cardTitle: 'Mutual Aid & Care',
     role: 'Mutual Aid Volunteer',
-    duration: '30 MIN',
+    duration: '17 MIN',
     desc: 'Follow the mutual aid work behind CHOP: supply runs, food tables, check-ins, and everyday support.',
     color: '#06b6d4',
     path: [
