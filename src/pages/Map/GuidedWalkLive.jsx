@@ -294,6 +294,7 @@ export default function GuidedWalkLive() {
   // Demo-only walking simulation: when the purple branch route is selected,
   // bypass GPS and animate the walker along the planned route.
   const isSimRoute = branchRoute?.perspectiveId === SIM_ROUTE_PERSPECTIVE_ID
+  const [simStarted, setSimStarted] = useState(!isSimRoute)
   const [directionsRoute, setDirectionsRoute] = useState(null)
   const plannedRoute = directionsRoute || route
 
@@ -502,6 +503,7 @@ export default function GuidedWalkLive() {
   // ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isSimRoute) return
+    if (!simStarted) return
     if (!plannedRoute || plannedRoute.length < 2) return
     if (doneRef.current) return
 
@@ -589,7 +591,22 @@ export default function GuidedWalkLive() {
     }, SIM_TICK_MS)
 
     return () => clearInterval(id)
-  }, [isSimRoute, plannedRoute, handleForwardMovement, pauseAudioForOffRoute])
+  }, [isSimRoute, simStarted, plannedRoute, handleForwardMovement, pauseAudioForOffRoute])
+
+  useEffect(() => {
+    if (!isSimRoute || simStarted || done) return
+
+    const startId = setTimeout(() => {
+      const startPoint = plannedRoute[0]
+      setUserLocation(startPoint)
+      setGpsTrail([startPoint])
+      setLocationError(null)
+      setSimStarted(true)
+      startAudioTrack(0)
+    }, 2000)
+
+    return () => clearTimeout(startId)
+  }, [isSimRoute, simStarted, done, plannedRoute, startAudioTrack])
 
   useEffect(() => {
     if (!MAPBOX_TOKEN || route.length < 2) {
@@ -637,7 +654,7 @@ export default function GuidedWalkLive() {
     return () => {
       controller.abort()
     }
-  }, [route])
+  }, [route, isSimRoute])
 
   // Sync audioPlaying state with the actual <audio> element (for the ▶/⏸ button)
   useEffect(() => {
@@ -701,6 +718,7 @@ export default function GuidedWalkLive() {
       setAudioCurrentTime(0)
       setAudioDuration(0)
       setAudioError(false)
+      setSimStarted(!isSimRoute)
     })
 
     if (audioGapTimeoutRef.current) {
@@ -734,7 +752,7 @@ export default function GuidedWalkLive() {
         audio.load()
       }
     }
-  }, [route])
+  }, [route, isSimRoute])
 
   function cancelOffRouteAlert() {
     if (audioGapTimeoutRef.current) {
@@ -994,7 +1012,7 @@ export default function GuidedWalkLive() {
       />
 
       {/* Audio player bar */}
-      {!done && (
+      {!done && (!isSimRoute || simStarted || currentAudioPOI) && (
         <div style={styles.audioBar}>
           <div style={styles.audioContent}>
             <button
