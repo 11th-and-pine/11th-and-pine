@@ -4,6 +4,7 @@ import Map, { Source, Layer, Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import PinIcon from '../../components/PinIcon'
 import BottomNav from '../../components/BottomNav'
+import { CHOP_ROUTES } from '../../data/chopRoutes'
 import westlakeCardImage from '../../assets/images/route-card-westlake.png'
 import chopCardImage from '../../assets/images/route-card-capitol-hill.png'
 import introIcon from '../../assets/images/app-logo-11th-pine.png'
@@ -27,68 +28,6 @@ const WESTLAKE_ROUTE = [
   [47.61528546767674, -122.32803424183338],
   [47.61532231916068, -122.32569616528335],
   [47.61534637433494, -122.31998484534672]
-]
-
-const CHOP_ROUTES = [
-  {
-    id: 1,
-    perspectiveId: '2',
-    title: "Alex's Route",
-    role: 'LGBTQ+ Community Organizer',
-    desc: 'Follow Alex’s CHOP route through queer care, protest strategy, and mutual aid around Cal Anderson Park.',
-    color: '#EED05D',
-    path: [
-    [47.61534637433494, -122.31998484534672],
-    [47.618724352103335, -122.32003383177313],
-    [47.6186916006176, -122.31948316444459],
-    [47.6183586260147, -122.31872194784339],
-    [47.61810752901002, -122.31941028200404]
-  ]},
-  {
-    id: 2,
-    perspectiveId: '3',
-    title: "Jordan's Route",
-    role: 'Local Resident',
-    desc: 'See CHOP through the eyes of a nearby resident watching daily life, protest, and public space collide.',
-    color: '#8b5cf6',
-    path: [
-    [47.61534637433494, -122.31998484534672],
-    [47.616353487308146, -122.31971489484106],
-    [47.61803690317238, -122.31941907806251],
-    [47.618674847206655, -122.320057007748]
-  ]},
-  {
-    id: 3,
-    perspectiveId: '4',
-    title: "Sam's Route",
-    role: 'Black Community Witness',
-    desc: 'Move through CHOP from the perspective of a Black man witnessing protest, care, and public grief.',
-    color: '#22c55e',
-    path: [
-    [47.61534637433494, -122.31998484534672],
-    [47.61537792391303, -122.31834587334546],
-    [47.615328, -122.318167],
-    [47.61644970344747, -122.31829245310354],
-    [47.618667480923264, -122.3183265120806],
-    [47.61871203860535, -122.31707799892192]
-  ]},
-  {
-    id: 4,
-    perspectiveId: '5',
-    title: "Tiana's Route",
-    role: 'Mutual Aid Volunteer',
-    desc: 'Follow the mutual aid work behind CHOP: supply runs, food tables, check-ins, and everyday support.',
-    color: '#06b6d4',
-    path: [
-    [47.61534637433494, -122.31998484534672],
-    [47.61537792391303, -122.31834587334546],
-    [47.615189438501694, -122.318284960829],
-    [47.61518751104897, -122.31702045803209],
-    [47.61507232602374, -122.31699950222341],
-    [47.615104, -122.316990],
-    [47.61507932004624, -122.31704771348437],
-    [47.616317, -122.317007]
-  ]},
 ]
 
 const POIS = [
@@ -186,6 +125,23 @@ function MenuGlyph() {
         d="M0 0.875C0 0.391751 0.380558 0 0.85 0H16.15C16.6194 0 17 0.391751 17 0.875C17 1.35825 16.6194 1.75 16.15 1.75H0.85C0.380558 1.75 0 1.35825 0 0.875ZM0 7C0 6.51675 0.380558 6.125 0.85 6.125H16.15C16.6194 6.125 17 6.51675 17 7C17 7.48325 16.6194 7.875 16.15 7.875H0.85C0.380558 7.875 0 7.48325 0 7ZM0 13.125C0 12.6418 0.380558 12.25 0.85 12.25H16.15C16.6194 12.25 17 12.6418 17 13.125C17 13.6082 16.6194 14 16.15 14H0.85C0.380558 14 0 13.6082 0 13.125Z"
         fill="#979797"
       />
+    </svg>
+  )
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      className="route-info-clock"
+      xmlns="http://www.w3.org/2000/svg"
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.4" />
+      <path d="M12 7.5v5l3.2 2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -299,6 +255,9 @@ export default function RouteOverview() {
 
   const isCapitolSelected = selectedArea === 'capitol'
   const canStartJourney = !isCapitolSelected || selectedChopRouteIndex !== null
+  const selectedRouteInfo = isCapitolSelected && selectedChopRouteIndex !== null
+    ? CHOP_ROUTES[selectedChopRouteIndex]
+    : null
   const displayPOIS = isCapitolSelected ? CAPITOL_POIS : POIS
   const westlakeDisplayPath = directionsPaths.westlake || WESTLAKE_ROUTE
   const getChopDisplayPath = useCallback(
@@ -549,6 +508,30 @@ export default function RouteOverview() {
           </Marker>
         </Map>
       </div>
+
+      {selectedRouteInfo && (
+        <aside
+          className="selected-route-info"
+          aria-label="Selected route information"
+          style={{ '--route-info-color': selectedRouteInfo.color }}
+        >
+          <p className="selected-route-theme">
+            {selectedRouteInfo.theme}
+          </p>
+          <div className="selected-route-meta">
+            <span className="selected-route-avatar" aria-hidden="true">
+              {selectedRouteInfo.title.charAt(0)}
+            </span>
+            <span className="selected-route-name">
+              {selectedRouteInfo.title.replace("'s Route", '')}
+            </span>
+            <span className="selected-route-duration">
+              <ClockIcon />
+              {selectedRouteInfo.duration}
+            </span>
+          </div>
+        </aside>
+      )}
 
       {/* POI detail card */}
       {openPOI && (

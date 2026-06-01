@@ -4,6 +4,7 @@ import Map, { Layer, Marker, Source } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getPerspectiveById, getRouteById } from '../../services/dataService'
 import NavCircleButton from '../../components/NavCircleButton'
+import { CHOP_ROUTES_BY_PERSPECTIVE_ID } from '../../data/chopRoutes'
 import jordanProfile from '../../assets/images/perspective-westlake-jordan-avatar.jpg'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
@@ -22,59 +23,6 @@ const FALLBACK_ROUTE_PATH = [
   [47.61532231916068, -122.32569616528335],
   [47.61534637433494, -122.31998484534672],
 ]
-
-// Capitol Hill branch routes — must stay in sync with CHOP_ROUTES in
-// src/pages/Map/RouteOverview.jsx. Keyed by perspective id so each
-// perspective's "Route Info" preview shows its own colored route.
-const CHOP_PREVIEW_ROUTES = {
-  // Alex — yellow
-  '2': {
-    color: '#EED05D',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.618724352103335, -122.32003383177313],
-      [47.6186916006176, -122.31948316444459],
-      [47.6183586260147, -122.31872194784339],
-      [47.61810752901002, -122.31941028200404],
-    ],
-  },
-  // Jordan — purple
-  '3': {
-    color: '#8b5cf6',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.616353487308146, -122.31971489484106],
-      [47.61803690317238, -122.31941907806251],
-      [47.618674847206655, -122.320057007748],
-    ],
-  },
-  // Sam — green
-  '4': {
-    color: '#22c55e',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615328, -122.318167],
-      [47.61644970344747, -122.31829245310354],
-      [47.618667480923264, -122.3183265120806],
-      [47.61871203860535, -122.31707799892192],
-    ],
-  },
-  // Tiana — simulation demo route
-  '5': {
-    color: '#06b6d4',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615189438501694, -122.318284960829],
-      [47.61518751104897, -122.31702045803209],
-      [47.61507232602374, -122.31699950222341],
-      [47.615104, -122.316990],
-      [47.61507932004624, -122.31704771348437],
-      [47.616317, -122.317007],
-    ],
-  },
-}
 
 const toLngLat = ([lat, lng]) => [lng, lat]
 const toLatLng = ([lng, lat]) => [lat, lng]
@@ -329,7 +277,7 @@ function PerspectiveDetail() {
   const route = perspective ? getRouteById(perspective.routeId || 'main') : null
   // Capitol Hill perspectives use the matching colored branch route for the
   // Route Info preview; Westlake (id "1") falls back to the main route.
-  const chopRoute = perspective ? CHOP_PREVIEW_ROUTES[perspective.id] : null
+  const chopRoute = perspective ? CHOP_ROUTES_BY_PERSPECTIVE_ID[perspective.id] : null
 
   if (!perspective) {
     return (

@@ -538,6 +538,85 @@ button, input, select, textarea, optgroup {
   box-shadow: 0 2px 8px color-mix(in srgb, var(--marker-color) 60%, transparent);
 }
 
+.selected-route-info {
+  position: absolute;
+  top: calc(66px + var(--safe-top, 0px));
+  right: 10px;
+  z-index: 12;
+  width: min(150px, calc(100% - 140px));
+  min-height: 48px;
+  padding: 9px 11px 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 6px 22px rgba(25, 27, 36, 0.09);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.selected-route-theme {
+  margin: 0 0 6px;
+  overflow: hidden;
+  color: var(--route-info-color);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.05;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.selected-route-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: #111;
+}
+
+.selected-route-avatar {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--route-info-color) 35%, white);
+  color: #111;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.selected-route-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #111;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.selected-route-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #C53E2C;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.route-info-clock {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+}
+
 .poi-overlay {
   position: absolute;
   inset: 0;

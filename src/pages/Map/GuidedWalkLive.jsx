@@ -165,14 +165,34 @@ function distanceFeet([lat1, lng1], [lat2, lng2]) {
   return earthRadiusFeet * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// Min distance from point to any vertex on the route. Good enough for
-// a coarse off-route check; for finer accuracy, do point-to-segment.
 function distanceToRoute(point, route) {
-  let minDist = Infinity
-  for (let i = 0; i < route.length; i++) {
-    minDist = Math.min(minDist, distanceFeet(point, route[i]))
+  if (!route?.length) return Infinity
+  if (route.length < 2) return distanceFeet(point, route[0])
+
+  const latScale = 364000
+  const lngScale = 364000 * Math.cos(point[0] * Math.PI / 180)
+  let minDistSq = Infinity
+
+  for (let i = 0; i < route.length - 1; i++) {
+    const a = route[i]
+    const b = route[i + 1]
+    const ax = (a[1] - point[1]) * lngScale
+    const ay = (a[0] - point[0]) * latScale
+    const bx = (b[1] - point[1]) * lngScale
+    const by = (b[0] - point[0]) * latScale
+    const vx = bx - ax
+    const vy = by - ay
+    const segLenSq = vx * vx + vy * vy
+    const t = segLenSq > 0
+      ? Math.max(0, Math.min(1, -(ax * vx + ay * vy) / segLenSq))
+      : 0
+    const px = ax + vx * t
+    const py = ay + vy * t
+
+    minDistSq = Math.min(minDistSq, px * px + py * py)
   }
-  return minDist
+
+  return Math.sqrt(minDistSq)
 }
 
 function routeProgressFeet(point, route) {
@@ -263,6 +283,7 @@ export default function GuidedWalkLive() {
   const audioTrackIndexRef = useRef(0)
   const audioStartedRef = useRef(false)
   const audioPausedByOffRouteRef = useRef(false)
+  const ignoreOffRouteAudioPauseRef = useRef(false)
   const userPausedAudioRef = useRef(false)
   const lastRouteProgressRef = useRef(null)
   const watchIdRef = useRef(null)
@@ -379,7 +400,7 @@ export default function GuidedWalkLive() {
     if (progress - lastProgress < AUDIO_START_PROGRESS_FT) return
     lastRouteProgressRef.current = progress
 
-    if (isOffRouteNow) {
+    if (isOffRouteNow && !ignoreOffRouteAudioPauseRef.current) {
       pauseAudioForOffRoute()
       return
     }
@@ -441,10 +462,10 @@ export default function GuidedWalkLive() {
         // ── Off-route alert ──
         if (!doneRef.current) {
           const isOff = distanceToRoute(next, plannedRoute) > OFF_ROUTE_FT
-          if (isOff) {
+          if (isOff && !ignoreOffRouteAudioPauseRef.current) {
             pauseAudioForOffRoute()
           }
-          handleForwardMovement(next, plannedRoute, isOff)
+          handleForwardMovement(next, plannedRoute, isOff && !ignoreOffRouteAudioPauseRef.current)
           if (isOff && !alertDismissedRef.current && !offRouteAlertRef.current) {
             setOffRouteAlert(true)
             if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300])
@@ -552,9 +573,9 @@ export default function GuidedWalkLive() {
         a[0] + (b[0] - a[0]) * segProg,
         a[1] + (b[1] - a[1]) * segProg,
       ]
-      const isOff = offRouteAlertRef.current
-      handleForwardMovement(pos, path, isOff)
-      if (isOff) {
+      const shouldPauseForOffRoute = offRouteAlertRef.current && !ignoreOffRouteAudioPauseRef.current
+      handleForwardMovement(pos, path, shouldPauseForOffRoute)
+      if (shouldPauseForOffRoute) {
         pauseAudioForOffRoute()
       }
 
@@ -661,26 +682,27 @@ export default function GuidedWalkLive() {
     })
   }, [userLocation, userHeading, gpsTrail, isSimRoute])
 
-  // Reset state when route changes.
-  const [prevRoute, setPrevRoute] = useState(route)
-  if (prevRoute !== route) {
-    setPrevRoute(route)
-    setDirectionsRoute(null)
-    setDone(false)
-    setOffRouteAlert(false)
-    setAlertDismissed(false)
-    setGpsTrail([])
-    setCurrentAudioPOI(null)
-    setAudioPlaying(false)
-    setAudioProgress(0)
-    setAudioCurrentTime(0)
-    setAudioDuration(0)
-    setAudioError(false)
-  }
-
-  // Reset the shared mock-audio sequence on route change. Playback begins only
-  // after forward movement is detected.
+  // Reset route-specific UI and the shared mock-audio sequence when the route
+  // changes. Playback begins only after forward movement is detected.
   useEffect(() => {
+    let active = true
+
+    queueMicrotask(() => {
+      if (!active) return
+
+      setDirectionsRoute(null)
+      setDone(false)
+      setOffRouteAlert(false)
+      setAlertDismissed(false)
+      setGpsTrail([])
+      setCurrentAudioPOI(null)
+      setAudioPlaying(false)
+      setAudioProgress(0)
+      setAudioCurrentTime(0)
+      setAudioDuration(0)
+      setAudioError(false)
+    })
+
     if (audioGapTimeoutRef.current) {
       clearTimeout(audioGapTimeoutRef.current)
       audioGapTimeoutRef.current = null
@@ -688,6 +710,7 @@ export default function GuidedWalkLive() {
     audioTrackIndexRef.current = 0
     audioStartedRef.current = false
     audioPausedByOffRouteRef.current = false
+    ignoreOffRouteAudioPauseRef.current = false
     userPausedAudioRef.current = false
     lastRouteProgressRef.current = null
 
@@ -699,6 +722,8 @@ export default function GuidedWalkLive() {
     }
 
     return () => {
+      active = false
+
       if (audioGapTimeoutRef.current) {
         clearTimeout(audioGapTimeoutRef.current)
         audioGapTimeoutRef.current = null
@@ -711,15 +736,51 @@ export default function GuidedWalkLive() {
     }
   }, [route])
 
-  function dismissOffRouteAlert() {
+  function cancelOffRouteAlert() {
+    if (audioGapTimeoutRef.current) {
+      clearTimeout(audioGapTimeoutRef.current)
+      audioGapTimeoutRef.current = null
+    }
+
+    userPausedAudioRef.current = true
+    audioPausedByOffRouteRef.current = false
+    setAudioPlaying(false)
     setOffRouteAlert(false)
     setAlertDismissed(true)
+  }
+
+  function resumeFromOffRouteAlert() {
+    ignoreOffRouteAudioPauseRef.current = true
+    userPausedAudioRef.current = false
+    audioPausedByOffRouteRef.current = false
+    setOffRouteAlert(false)
+    setAlertDismissed(true)
+
+    const audio = audioRef.current
+    if (!audioStartedRef.current) {
+      startAudioTrack(0)
+      return
+    }
+
+    const nextTrack = audioTrackIndexRef.current + 1
+    if (audio?.ended && nextTrack < MOCK_AUDIO_TRACKS.length) {
+      startAudioTrack(nextTrack)
+      return
+    }
+
+    if (audio?.src && !audioError) {
+      audio.play()
+        .then(() => setAudioPlaying(true))
+        .catch(() => setAudioPlaying(false))
+    }
   }
 
   function triggerSimOffRouteAlert() {
     setAlertDismissed(false)
     setOffRouteAlert(true)
-    pauseAudioForOffRoute()
+    if (!ignoreOffRouteAudioPauseRef.current) {
+      pauseAudioForOffRoute()
+    }
     if (navigator.vibrate) navigator.vibrate([300, 150, 300])
     playErrorSound()
   }
@@ -1035,7 +1096,7 @@ export default function GuidedWalkLive() {
             <button
               className="walk-alert-action"
               type="button"
-              onClick={dismissOffRouteAlert}
+              onClick={cancelOffRouteAlert}
               style={styles.alertCancelButton}
             >
               Cancel
@@ -1044,7 +1105,7 @@ export default function GuidedWalkLive() {
             <button
               className="walk-alert-action"
               type="button"
-              onClick={dismissOffRouteAlert}
+              onClick={resumeFromOffRouteAlert}
               style={styles.alertResumeButton}
             >
               <span style={styles.alertResumeIcon}>▶</span>

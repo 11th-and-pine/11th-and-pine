@@ -3,97 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import Map, { Source, Layer, Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import NavCircleButton from '../../components/NavCircleButton'
+import { CHOP_ROUTES } from '../../data/chopRoutes'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 const INITIAL_VIEW_STATE = {longitude: -122.328, latitude: 47.6148, zoom: 15}
 const MAP_STYLE = 'mapbox://styles/mapbox/light-v11'
-
-const CHOP_ROUTES = [
-  {
-    id: 1,
-    perspectiveId: '2', // Alex — see src/mock/perspectives.json
-    title: "Alex's Route",
-    role: 'LGBTQ+ Community Organizer',
-    desc: 'Follow Alex’s CHOP route through queer care, protest strategy, and mutual aid around Cal Anderson Park.',
-    color: '#EED05D',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.618724352103335, -122.32003383177313],
-      [47.6186916006176, -122.31948316444459],
-      [47.6183586260147, -122.31872194784339],
-      [47.61810752901002, -122.31941028200404]
-    ]
-  },
-
-  {
-    id: 2,
-    perspectiveId: '3', // Jordan
-    title: "Jordan's Route",
-    role: 'Local Resident',
-    desc: 'See CHOP through the eyes of a nearby resident watching daily life, protest, and public space collide.',
-    color: '#8b5cf6',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.6153546928591, -122.31972629234374],
-      [47.616353487308146, -122.31971489484106],
-      [47.61803690317238, -122.31941907806251],
-      [47.618674847206655, -122.320057007748]
-    ]
-  },
-
-  {
-    id: 3,
-    perspectiveId: '4', // Sam
-    title: "Sam's Route",
-    role: 'Black Community Witness',
-    desc: 'Move through CHOP from the perspective of a Black man witnessing protest, care, and public grief.',
-    color: '#22c55e',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615328, -122.318167],
-      [47.61644970344747, -122.31829245310354],
-      [47.618667480923264, -122.3183265120806],
-      [47.61871203860535, -122.31707799892192]
-    ]
-  },
-
-  {
-    id: 4,
-    perspectiveId: '5',
-    title: "Tiana's Route",
-    role: 'Mutual Aid Volunteer',
-    desc: 'Follow the mutual aid work behind CHOP: supply runs, food tables, check-ins, and everyday support.',
-    color: '#06b6d4',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615189438501694, -122.318284960829],
-      [47.61518751104897, -122.31702045803209],
-      [47.61507232602374, -122.31699950222341],
-      [47.615104, -122.316990],
-      [47.61507932004624, -122.31704771348437],
-      [47.616317, -122.317007]
-    ]
-  },
-  
-  {
-    id: 5,
-    title: 'The Vigil Walk',
-    role: 'Community Elder',
-    desc: 'Trace a CHOP night route through the north side of the zone, where vigils, reflection, and community presence continued after dark.',
-    color: '#06b6d4',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.61539797647727, -122.3197373210817],
-      [47.616384131027495, -122.31970265459985],
-      [47.61642619407816, -122.31846159454928],
-      [47.61758057794659, -122.31837839488288],
-      [47.61865081390424, -122.31837146158365],
-      [47.61871624246526, -122.31962638822698]
-    ]
-  }
-]
 
 const toLngLat = ([lat, lng]) => [lng, lat]
 

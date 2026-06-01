@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPerspectives } from '../../services/dataService'
 import BottomNav from '../../components/BottomNav'
+import { CHOP_ROUTES_BY_PERSPECTIVE_ID } from '../../data/chopRoutes'
 import perspectiveWestlakeIcon from '../../assets/images/tab-westlake-icon.png'
 import perspectiveChopIcon from '../../assets/images/tab-capitol-hill-icon.svg'
 import perspectiveLabelIcon from '../../assets/images/tab-labels-icon.png'
@@ -45,63 +46,7 @@ const LABELS = [
   },
 ]
 
-const CAPITOL_ROUTES = {
-  2: {
-    id: 1,
-    title: "Alex's Route",
-    cardTitle: 'Queer Care & Protest',
-    color: '#EED05D',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.618724352103335, -122.32003383177313],
-      [47.6186916006176, -122.31948316444459],
-      [47.6183586260147, -122.31872194784339],
-      [47.61810752901002, -122.31941028200404],
-    ],
-  },
-  3: {
-    id: 2,
-    title: "Jordan's Route",
-    cardTitle: 'Resident Witness',
-    color: '#8b5cf6',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.616353487308146, -122.31971489484106],
-      [47.61803690317238, -122.31941907806251],
-      [47.618674847206655, -122.320057007748],
-    ],
-  },
-  4: {
-    id: 3,
-    title: "Sam's Route",
-    cardTitle: 'Black Witness',
-    color: '#22c55e',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615328, -122.318167],
-      [47.61644970344747, -122.31829245310354],
-      [47.618667480923264, -122.3183265120806],
-      [47.61871203860535, -122.31707799892192],
-    ],
-  },
-  5: {
-    id: 4,
-    title: "Tiana's Route",
-    cardTitle: 'Mutual Aid & Care',
-    color: '#06b6d4',
-    path: [
-      [47.61534637433494, -122.31998484534672],
-      [47.61537792391303, -122.31834587334546],
-      [47.615189438501694, -122.318284960829],
-      [47.61518751104897, -122.31702045803209],
-      [47.61507232602374, -122.31699950222341],
-      [47.615104, -122.316990],
-      [47.61507932004624, -122.31704771348437],
-      [47.616317, -122.317007],
-    ],
-  },
-}
+const CAPITOL_ROUTES = CHOP_ROUTES_BY_PERSPECTIVE_ID
 
 function ChevronIcon({ expanded }) {
   return (
